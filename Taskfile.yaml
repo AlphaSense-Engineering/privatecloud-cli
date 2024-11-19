@@ -1,6 +1,37 @@
 version: 3
 
 tasks:
+  githooks:
+    cmds:
+      - git config core.hooksPath .githooks
+
+  ci:
+    deps:
+      - ci-lint
+      - ci-test
+  
+  ci-lint:
+    cmds:
+      - docker image inspect privatecloud-installer-ci-lint:0.0.1 > /dev/null 2>&1 || docker build --platform=linux/amd64 -t privatecloud-installer-ci-lint:0.0.1 -f ./ci/lint.dockerfile .
+      - docker run --platform linux/amd64 --rm -v $(pwd):/app privatecloud-installer-ci-lint:0.0.1
+  
+  ci-test:
+    cmds:
+      - docker image inspect privatecloud-installer-ci-test:0.0.1 > /dev/null 2>&1 || docker build --platform=linux/amd64 -t privatecloud-installer-ci-test:0.0.1 -f ./ci/test.dockerfile .
+      - docker run --platform linux/amd64 --rm -v $(pwd):/app privatecloud-installer-ci-test:0.0.1
+
   run:
     cmds:
       - go run . {{.CLI_ARGS}}
+  
+  check:
+    cmds:
+      - go run . check {{.CLI_ARGS}}
+  
+  pod:
+    cmds:
+      - go run . pod {{.CLI_ARGS}}
+
+  pod-image-build:
+    cmds:
+      - docker build --platform=linux/amd64 -t privatecloud-installer-pod:0.0.1 -f ./pod.dockerfile .

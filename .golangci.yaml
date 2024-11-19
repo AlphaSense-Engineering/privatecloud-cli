@@ -1,0 +1,49 @@
+linters:
+  disable-all: true
+  enable:
+    - durationcheck
+    - errcheck
+    - errname
+    - errorlint
+    - forbidigo
+    - forcetypeassert
+    - funlen
+    - gocognit
+    - goconst
+    - gocyclo
+    - gofmt
+    - goimports
+    - gosec
+    - gosimple
+    - govet
+    - importas
+    - ineffassign
+    - lll
+    - makezero
+    - misspell
+    - mnd
+    - nakedret
+    - nestif
+    - nilerr
+    - nlreturn
+    - prealloc
+    - revive
+    - staticcheck
+    - typecheck
+    - unconvert
+    - unused
+    - whitespace
+    - wsl
+
+linters-settings:
+  gocognit:
+    min-complexity: 25
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  lll:
+    line-length: 160
+    tab-width: 4
+
+issues:
+  exclude-use-default: false

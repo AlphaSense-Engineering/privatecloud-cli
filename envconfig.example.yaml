@@ -1,0 +1,16 @@
+apiVersion: alpha-sense.com/v1
+kind: EnvConfig
+metadata:
+  name: cluster-name
+spec:
+  clientID: "1337"
+  cloudSpec:
+    aws:
+      accountID: "123456789012"
+      oidcUrl: oidc.eks.us-east-1.amazonaws.com/id/ABC123XYZ456DEF789GHI012JKL345MN
+    cloudZone: us-east-1
+    provider: aws
+  clusterName: cluster-name
+  domainName: cluster-name.example.com
+  installID: irrelevant
+  version: v1.6.3
