@@ -224,6 +224,7 @@ $RECYCLE.BIN/
 
 # Project specific
 
+privatecloud-installer
 envconfig.yaml
 
 markdownlint-cli2-sarif.sarif

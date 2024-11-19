@@ -20,6 +20,10 @@ tasks:
       - docker image inspect privatecloud-installer-ci-test:0.0.1 > /dev/null 2>&1 || docker build --platform=linux/amd64 -t privatecloud-installer-ci-test:0.0.1 -f ./ci/test.dockerfile .
       - docker run --platform linux/amd64 --rm -v $(pwd):/app privatecloud-installer-ci-test:0.0.1
 
+  build:
+    cmds:
+      - go build -o privatecloud-installer
+
   run:
     cmds:
       - go run . {{.CLI_ARGS}}
