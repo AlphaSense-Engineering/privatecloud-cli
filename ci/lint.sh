@@ -2,6 +2,8 @@
 
 set -euox pipefail
 
+npx commitlint --last --verbose
+
 npx commitlint --from origin/main --to HEAD --verbose
 
 go mod tidy
