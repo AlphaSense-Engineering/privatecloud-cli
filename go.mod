@@ -3,7 +3,7 @@ module github.com/AlphaSense-Engineering/privatecloud-installer
 go 1.22.6
 
 require (
-	github.com/MicahParks/jwkset v0.5.19
+	github.com/MicahParks/jwkset v0.5.20
 	github.com/MicahParks/keyfunc/v3 v3.3.5
 	github.com/aws/aws-sdk-go-v2 v1.32.4
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.45
