@@ -14,8 +14,8 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/awscrossplanerolechecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/awsjwtretriever"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/dbchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/jwtchecker"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/mysqlchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/oidcchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/smtpchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/ssochecker"
@@ -30,8 +30,8 @@ import (
 )
 
 var (
-	// errFailedToCheckDatabase is the error that occurs when the database is not checked.
-	errFailedToCheckDatabase = errors.New("failed to check database")
+	// errFailedToCheckMySQL is the error that occurs when the MySQL is not checked.
+	errFailedToCheckMySQL = errors.New("failed to check MySQL")
 
 	// errFailedToCheckTLS is the error that occurs when the TLS is not checked.
 	errFailedToCheckTLS = errors.New("failed to check TLS")
@@ -66,8 +66,8 @@ type AWSChecker struct {
 	// httpClient is the HTTP client.
 	httpClient *http.Client
 
-	// dbChecker is the database checker.
-	dbChecker *dbchecker.DBChecker
+	// mySQLChecker is the MySQL checker.
+	mySQLChecker *mysqlchecker.MySQLChecker
 	// tlsChecker is the TLS checker.
 	tlsChecker *tlschecker.TLSChecker
 	// smtpChecker is the SMTP checker.
@@ -86,7 +86,7 @@ var _ handler.Handler = &AWSChecker{}
 
 // setup is the function that sets up the AWS checker.
 func (c *AWSChecker) setup() {
-	c.dbChecker = dbchecker.New(c.clientset)
+	c.mySQLChecker = mysqlchecker.New(c.clientset)
 
 	c.tlsChecker = tlschecker.New(c.clientset)
 
@@ -109,8 +109,8 @@ func (c *AWSChecker) setup() {
 // nolint:funlen
 func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	const (
-		// logMsgDatabaseChecked is the message that is logged when the database is checked.
-		logMsgDatabaseChecked = "checked database"
+		// logMsgMySQLChecked is the message that is logged when the MySQL is checked.
+		logMsgMySQLChecked = "checked MySQL"
 
 		// logMsgTLSChecked is the message that is logged when the TLS is checked.
 		logMsgTLSChecked = "checked TLS"
@@ -134,11 +134,11 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		logMsgCrossplaneRoleChecked = "checked Crossplane role"
 	)
 
-	if _, err := c.dbChecker.Handle(ctx); err != nil {
-		return nil, multierr.Combine(errFailedToCheckDatabase, err)
+	if _, err := c.mySQLChecker.Handle(ctx); err != nil {
+		return nil, multierr.Combine(errFailedToCheckMySQL, err)
 	}
 
-	log.Println(logMsgDatabaseChecked)
+	log.Println(logMsgMySQLChecked)
 
 	if _, err := c.tlsChecker.Handle(ctx); err != nil {
 		return nil, multierr.Combine(errFailedToCheckTLS, err)

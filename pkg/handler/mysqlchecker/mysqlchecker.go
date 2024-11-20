@@ -1,5 +1,5 @@
-// Package dbchecker is the package that contains the check functions for the database.
-package dbchecker
+// Package mysqlchecker is the package that contains the check functions for the MySQL.
+package mysqlchecker
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// configMismatchError is the error that is returned when the configuration of the database is mismatched.
+// configMismatchError is the error that is returned when the configuration of the MySQL is mismatched.
 type configMismatchError struct {
 	// key is the key that is mismatched.
 	key string
@@ -37,7 +37,7 @@ func newConfigMismatchError(key, expected, got string) *configMismatchError {
 }
 
 var (
-	// constExpectedConfig is the map of expected configuration for the database.
+	// constExpectedConfig is the map of expected configuration for the MySQL.
 	//
 	// These are listed at https://developer.alpha-sense.com/enterprise/technical-requirements/#mysql-database-cluster.
 	//
@@ -54,21 +54,21 @@ var (
 	}
 )
 
-// DBChecker is the type that contains the check functions for the database.
-type DBChecker struct {
+// MySQLChecker is the type that contains the check functions for the MySQL.
+type MySQLChecker struct {
 	// clientset is the Kubernetes client.
 	clientset kubernetes.Interface
 }
 
-var _ handler.Handler = &DBChecker{}
+var _ handler.Handler = &MySQLChecker{}
 
-// Handle is the function that handles the database checking.
+// Handle is the function that handles the MySQL checking.
 //
 // The arguments are not used.
 // It returns nothing on success, or an error on failure.
-func (c *DBChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
+func (c *MySQLChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	const (
-		// secretName is the name of the secret that contains the database credentials.
+		// secretName is the name of the secret that contains the MySQL credentials.
 		secretName = "default-creds"
 	)
 
@@ -105,7 +105,7 @@ func (c *DBChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	return []any{}, nil
 }
 
-// New is a function that returns a new database checker.
-func New(clientset kubernetes.Interface) *DBChecker {
-	return &DBChecker{clientset: clientset}
+// New is a function that returns a new MySQL checker.
+func New(clientset kubernetes.Interface) *MySQLChecker {
+	return &MySQLChecker{clientset: clientset}
 }
