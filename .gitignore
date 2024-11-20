@@ -222,9 +222,11 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/git,macos,linux,windows,go,visualstudiocode,jetbrains+all
 
+# CI
+
+markdownlint-cli2-sarif.sarif
+
 # Project specific
 
 privatecloud-installer
 envconfig.yaml
-
-markdownlint-cli2-sarif.sarif

@@ -55,6 +55,12 @@ We use **Task** to manage development commands. The following commands are avail
     task ci-test
     ```
 
+- **Building the Application:**
+
+  ```bash
+  task build
+  ```
+
 - **Running the Application:**
   
   ```bash
@@ -66,6 +72,8 @@ We use **Task** to manage development commands. The following commands are avail
     ```bash
     task check -- <first_step_file>
     ```
+
+    **N.B.** See available flags by running `task check -- -h`.
 
   - **Running the Pod Command:**
   
