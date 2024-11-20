@@ -84,6 +84,9 @@ const (
 
 	// flagDockerRepo is the name of the flag for the Docker repository.
 	flagDockerRepo = "docker-repo"
+
+	// flagDockerImage is the name of the flag for the Docker image.
+	flagDockerImage = "docker-image"
 )
 
 // namespaceKubeSystem is the namespace for the Kubernetes system.
@@ -297,10 +300,13 @@ func (c *checkCmd) createPod(ctx context.Context, serviceAccount *corev1.Service
 			ServiceAccountName: serviceAccount.Name,
 			Containers: []corev1.Container{{
 				Name: constant.AppName,
-				Image: strings.Join([]string{
-					util.Flag(c.cobraCmd, flagDockerRepo),
-					fmt.Sprintf("%s-pod:0.0.1", constant.AppName),
-				}, string(constant.HTTPPathSeparator)),
+				Image: strings.Join(
+					[]string{
+						util.Flag(c.cobraCmd, flagDockerRepo),
+						util.Flag(c.cobraCmd, flagDockerImage),
+					},
+					string(constant.HTTPPathSeparator),
+				),
 				Env: []corev1.EnvVar{{
 					Name:  envVarEnvConfig,
 					Value: base64.StdEncoding.EncodeToString(envConfigBytes),
@@ -549,6 +555,13 @@ If you do not specify the Kubernetes configuration file, the command will use th
 		defaultDockerRepo = ""
 	)
 
+	var (
+		// constDefaultDockerImage is the default image to use for the pod.
+		//
+		// Do not modify this variable, it is supposed to be constant.
+		constDefaultDockerImage = fmt.Sprintf("%s-pod:latest", constant.AppName)
+	)
+
 	cobraCmd.Flags().String(
 		flagKubeConfig,
 		constant.EmptyString,
@@ -556,6 +569,7 @@ If you do not specify the Kubernetes configuration file, the command will use th
 	)
 
 	cobraCmd.Flags().String(flagDockerRepo, defaultDockerRepo, "the Docker repository to use for the pod image")
+	cobraCmd.Flags().String(flagDockerImage, constDefaultDockerImage, "the Docker image to use for the pod")
 
 	return cobraCmd
 }
