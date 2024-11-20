@@ -5,8 +5,3 @@ package util
 func Identity[T any](value T) T {
 	return value
 }
-
-// ExtractErr is a generic function that accepts any type and an error, and returns the error only.
-func ExtractErr[T any](_ T, err error) error {
-	return err
-}

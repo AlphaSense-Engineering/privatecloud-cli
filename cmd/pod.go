@@ -14,7 +14,6 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/infrachecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/k8s/kubeutil"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
 	corev1 "k8s.io/api/core/v1"
@@ -146,7 +145,7 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 		return
 	}
 
-	if err = util.ExtractErr(infraChecker.Handle(ctx)); err != nil {
+	if _, err := infraChecker.Handle(ctx); err != nil {
 		log.Fatalln(multierr.Combine(errFailedToCheckInfrastructure, err))
 
 		return

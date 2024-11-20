@@ -123,19 +123,19 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		logMsgCrossplaneRoleChecked = "checked Crossplane role"
 	)
 
-	if err := util.ExtractErr(c.dbChecker.Handle(ctx)); err != nil {
+	if _, err := c.dbChecker.Handle(ctx); err != nil {
 		return nil, multierr.Combine(errFailedToCheckDatabase, err)
 	}
 
 	log.Println(logMsgDatabaseChecked)
 
-	if err := util.ExtractErr(c.tlsChecker.Handle(ctx)); err != nil {
+	if _, err := c.tlsChecker.Handle(ctx); err != nil {
 		return nil, multierr.Combine(errFailedToCheckTLS, err)
 	}
 
 	log.Println(logMsgTLSChecked)
 
-	if err := util.ExtractErr(c.smtpChecker.Handle(ctx)); err != nil {
+	if _, err := c.smtpChecker.Handle(ctx); err != nil {
 		return nil, multierr.Combine(errFailedToCheckSMTP, err)
 	}
 
@@ -155,7 +155,7 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 
 	log.Println(logMsgJWTsRetrieved)
 
-	if err = util.ExtractErr(c.jwtChecker.Handle(ctx, jwksURI, jwts)); err != nil {
+	if _, err := c.jwtChecker.Handle(ctx, jwksURI, jwts); err != nil {
 		return nil, multierr.Combine(errFailedToCheckJWTs, err)
 	}
 
@@ -194,7 +194,7 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 			),
 		}))
 
-		if err = util.ExtractErr(crossplaneRoleChecker.Handle(ctx)); err != nil {
+		if _, err := crossplaneRoleChecker.Handle(ctx); err != nil {
 			break
 		}
 	}
