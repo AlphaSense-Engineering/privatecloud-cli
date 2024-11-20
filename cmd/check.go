@@ -92,6 +92,21 @@ const (
 // namespaceKubeSystem is the namespace for the Kubernetes system.
 const namespaceKubeSystem = "kube-system"
 
+// roles is the struct that contains the roles.
+type roles struct {
+	// alphaSense is the role for the alphasense namespace.
+	alphaSense *rbacv1.Role
+
+	// crossplane is the role for the crossplane namespace.
+	crossplane *rbacv1.Role
+
+	// mySQL is the role for the mysql namespace.
+	mySQL *rbacv1.Role
+
+	// platform is the role for the platform namespace.
+	platform *rbacv1.Role
+}
+
 // checkCmd is the command to check the infrastructure.
 type checkCmd struct {
 	// cobraCmd is the Cobra command.
@@ -144,8 +159,7 @@ func (c *checkCmd) createServiceAccount(ctx context.Context) (*corev1.ServiceAcc
 		},
 	}
 
-	_, err := c.clientsetSA.Create(ctx, serviceAccount, metav1.CreateOptions{})
-	if err != nil {
+	if _, err := c.clientsetSA.Create(ctx, serviceAccount, metav1.CreateOptions{}); err != nil {
 		return nil, multierr.Combine(errFailedToCreateServiceAccount, err)
 	}
 
@@ -159,12 +173,11 @@ func (c *checkCmd) ensureNamespace(ctx context.Context) error {
 	// logMsgNamespaceEnsured is the message that is logged when the namespace is ensured.
 	const logMsgNamespaceEnsured = "ensured %s Namespace"
 
-	_, err := c.clientsetNamespace.Create(ctx, &corev1.Namespace{
+	if _, err := c.clientsetNamespace.Create(ctx, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespaceCrossplane,
 		},
-	}, metav1.CreateOptions{})
-	if err != nil && !apierrors.IsAlreadyExists(err) {
+	}, metav1.CreateOptions{}); err != nil && !apierrors.IsAlreadyExists(err) {
 		return multierr.Combine(errFailedToEnsureNamespace, err)
 	}
 
@@ -174,112 +187,102 @@ func (c *checkCmd) ensureNamespace(ctx context.Context) error {
 }
 
 // createRoles creates the roles.
-func (c *checkCmd) createRoles(ctx context.Context) (*rbacv1.Role, *rbacv1.Role, error) {
+func (c *checkCmd) createRoles(ctx context.Context) (*roles, error) {
 	// logMsgRoleCreated is the message that is logged when the role is created.
 	const logMsgRoleCreated = "created %s/%s Role"
 
 	roleName := fmt.Sprintf("%s-role", constant.AppName)
 
-	roleCrossplane := &rbacv1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      roleName,
-			Namespace: namespaceCrossplane,
+	namespacePolicyRules := []struct {
+		namespace string
+		rules     []rbacv1.PolicyRule
+	}{
+		{constant.NamespaceAlphaSense, []rbacv1.PolicyRule{
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{"secrets"}, Verbs: []string{rbacv1.VerbAll}},
+		}},
+		{namespaceCrossplane, []rbacv1.PolicyRule{
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{"serviceaccounts"}, Verbs: []string{rbacv1.VerbAll}},
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{"serviceaccounts/token"}, Verbs: []string{rbacv1.VerbAll}},
+		}},
+		{constant.NamespaceMySQL, []rbacv1.PolicyRule{
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{"secrets"}, Verbs: []string{rbacv1.VerbAll}}},
 		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{constant.EmptyString},
-				Resources: []string{"serviceaccounts"},
-				Verbs:     []string{rbacv1.VerbAll},
+		{constant.NamespacePlatform, []rbacv1.PolicyRule{
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{"secrets"}, Verbs: []string{rbacv1.VerbAll}}},
+		},
+	}
+
+	roles := &roles{}
+
+	for _, pair := range namespacePolicyRules {
+		role := &rbacv1.Role{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      roleName,
+				Namespace: pair.namespace,
 			},
-			{
-				APIGroups: []string{constant.EmptyString},
-				Resources: []string{"serviceaccounts/token"},
-				Verbs:     []string{rbacv1.VerbAll},
-			},
-		},
+			Rules: pair.rules,
+		}
+
+		if _, err := c.clientset.RbacV1().Roles(pair.namespace).Create(ctx, role, metav1.CreateOptions{}); err != nil {
+			return nil, multierr.Combine(errFailedToCreateRole, err)
+		}
+
+		log.Printf(logMsgRoleCreated, pair.namespace, role.Name)
+
+		switch pair.namespace {
+		case constant.NamespaceAlphaSense:
+			roles.alphaSense = role
+		case namespaceCrossplane:
+			roles.crossplane = role
+		case constant.NamespaceMySQL:
+			roles.mySQL = role
+		case constant.NamespacePlatform:
+			roles.platform = role
+		}
 	}
 
-	_, err := c.clientset.RbacV1().Roles(namespaceCrossplane).Create(ctx, roleCrossplane, metav1.CreateOptions{})
-	if err != nil {
-		return nil, nil, multierr.Combine(errFailedToCreateRole, err)
-	}
-
-	log.Printf(logMsgRoleCreated, namespaceCrossplane, roleCrossplane.Name)
-
-	roleMySQL := &rbacv1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      roleName,
-			Namespace: constant.NamespaceMySQL,
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{constant.EmptyString},
-				Resources: []string{"secrets"},
-				Verbs:     []string{rbacv1.VerbAll},
-			},
-		},
-	}
-
-	_, err = c.clientset.RbacV1().Roles(constant.NamespaceMySQL).Create(ctx, roleMySQL, metav1.CreateOptions{})
-	if err != nil {
-		return nil, nil, multierr.Combine(errFailedToCreateRole, err)
-	}
-
-	log.Printf(logMsgRoleCreated, constant.NamespaceMySQL, roleMySQL.Name)
-
-	return roleCrossplane, roleMySQL, nil
+	return roles, nil
 }
 
 // createRoleBindings creates the role bindings.
-func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccount *corev1.ServiceAccount, roleCrossplane *rbacv1.Role, roleMySQL *rbacv1.Role) error {
+func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccount *corev1.ServiceAccount, roles *roles) error {
 	// logMsgRoleBindingCreated is the message that is logged when the role binding is created.
 	const logMsgRoleBindingCreated = "created %s/%s RoleBinding"
 
 	roleBindingName := fmt.Sprintf("%s-rolebinding", constant.AppName)
 
-	_, err := c.clientset.RbacV1().RoleBindings(namespaceCrossplane).Create(ctx, &rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      roleBindingName,
-			Namespace: namespaceCrossplane,
-		},
-		Subjects: []rbacv1.Subject{{
-			Kind:      rbacv1.ServiceAccountKind,
-			Name:      serviceAccount.Name,
-			Namespace: namespaceKubeSystem,
-		}},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: rbacv1.GroupName,
-			Kind:     "Role",
-			Name:     roleCrossplane.Name,
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		return multierr.Combine(errFailedToCreateRoleBinding, err)
+	namespaceRoles := []struct {
+		namespace string
+		role      *rbacv1.Role
+	}{
+		{constant.NamespaceAlphaSense, roles.alphaSense},
+		{namespaceCrossplane, roles.crossplane},
+		{constant.NamespaceMySQL, roles.mySQL},
+		{constant.NamespacePlatform, roles.platform},
 	}
 
-	log.Printf(logMsgRoleBindingCreated, namespaceCrossplane, roleBindingName)
+	for _, pair := range namespaceRoles {
+		if _, err := c.clientset.RbacV1().RoleBindings(pair.namespace).Create(ctx, &rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      roleBindingName,
+				Namespace: pair.namespace,
+			},
+			Subjects: []rbacv1.Subject{{
+				Kind:      rbacv1.ServiceAccountKind,
+				Name:      serviceAccount.Name,
+				Namespace: namespaceKubeSystem,
+			}},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "Role",
+				Name:     pair.role.Name,
+			},
+		}, metav1.CreateOptions{}); err != nil {
+			return multierr.Combine(errFailedToCreateRoleBinding, err)
+		}
 
-	_, err = c.clientset.RbacV1().RoleBindings(constant.NamespaceMySQL).Create(ctx, &rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      roleBindingName,
-			Namespace: constant.NamespaceMySQL,
-		},
-		Subjects: []rbacv1.Subject{{
-			Kind:      rbacv1.ServiceAccountKind,
-			Name:      serviceAccount.Name,
-			Namespace: namespaceKubeSystem,
-		}},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: rbacv1.GroupName,
-			Kind:     "Role",
-			Name:     roleMySQL.Name,
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		return multierr.Combine(errFailedToCreateRoleBinding, err)
+		log.Printf(logMsgRoleBindingCreated, pair.namespace, roleBindingName)
 	}
-
-	log.Printf(logMsgRoleBindingCreated, constant.NamespaceMySQL, roleBindingName)
 
 	return nil
 }
@@ -294,7 +297,7 @@ func (c *checkCmd) createPod(ctx context.Context, serviceAccount *corev1.Service
 		return multierr.Combine(errFailedToMarshalEnvConfig, err)
 	}
 
-	_, err = c.clientsetPod.Create(ctx, &corev1.Pod{
+	if _, err = c.clientsetPod.Create(ctx, &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: constant.AppName,
 		},
@@ -317,8 +320,7 @@ func (c *checkCmd) createPod(ctx context.Context, serviceAccount *corev1.Service
 			}},
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
-	}, metav1.CreateOptions{})
-	if err != nil {
+	}, metav1.CreateOptions{}); err != nil {
 		return multierr.Combine(errFailedToCreatePod, err)
 	}
 
@@ -396,7 +398,7 @@ func (c *checkCmd) streamPodLogs(ctx context.Context) error {
 }
 
 // cleanupResources cleans up the resources.
-func (c *checkCmd) cleanupResources(ctx context.Context, roleCrossplane *rbacv1.Role, roleMySQL *rbacv1.Role, serviceAccount *corev1.ServiceAccount) error {
+func (c *checkCmd) cleanupResources(ctx context.Context, roles *roles, serviceAccount *corev1.ServiceAccount) error {
 	// logMsgResourcesCleanedUp is the message that is logged when the resources are cleaned up.
 	const logMsgResourcesCleanedUp = "resources cleaned up"
 
@@ -411,20 +413,22 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleCrossplane *rbacv1.
 
 	roleBindingName := fmt.Sprintf("%s-rolebinding", constant.AppName)
 
-	if err = c.clientset.RbacV1().RoleBindings(constant.NamespaceMySQL).Delete(ctx, roleBindingName, metav1.DeleteOptions{}); err != nil {
-		return multierr.Combine(errFailedToDeleteRoleBinding, err)
+	namespaces := []struct {
+		namespace string
+		role      *rbacv1.Role
+	}{
+		{constant.NamespaceMySQL, roles.mySQL},
+		{namespaceCrossplane, roles.crossplane},
 	}
 
-	if err = c.clientset.RbacV1().RoleBindings(namespaceCrossplane).Delete(ctx, roleBindingName, metav1.DeleteOptions{}); err != nil {
-		return multierr.Combine(errFailedToDeleteRoleBinding, err)
-	}
+	for _, ns := range namespaces {
+		if err = c.clientset.RbacV1().RoleBindings(ns.namespace).Delete(ctx, roleBindingName, metav1.DeleteOptions{}); err != nil {
+			return multierr.Combine(errFailedToDeleteRoleBinding, err)
+		}
 
-	if err = c.clientset.RbacV1().Roles(constant.NamespaceMySQL).Delete(ctx, roleMySQL.Name, metav1.DeleteOptions{}); err != nil {
-		return multierr.Combine(errFailedToDeleteRole, err)
-	}
-
-	if err = c.clientset.RbacV1().Roles(namespaceCrossplane).Delete(ctx, roleCrossplane.Name, metav1.DeleteOptions{}); err != nil {
-		return multierr.Combine(errFailedToDeleteRole, err)
+		if err = c.clientset.RbacV1().Roles(ns.namespace).Delete(ctx, ns.role.Name, metav1.DeleteOptions{}); err != nil {
+			return multierr.Combine(errFailedToDeleteRole, err)
+		}
 	}
 
 	if err = c.clientsetSA.Delete(ctx, serviceAccount.Name, metav1.DeleteOptions{}); err != nil {
@@ -498,12 +502,12 @@ func (c *checkCmd) Run(cobraCmd *cobra.Command, args []string) {
 		log.Fatalln(err)
 	}
 
-	roleCrossplane, roleMySQL, err := c.createRoles(ctx)
+	roles, err := c.createRoles(ctx)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = c.createRoleBindings(ctx, serviceAccount, roleCrossplane, roleMySQL)
+	err = c.createRoleBindings(ctx, serviceAccount, roles)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -523,7 +527,7 @@ func (c *checkCmd) Run(cobraCmd *cobra.Command, args []string) {
 		log.Fatalln(err)
 	}
 
-	err = c.cleanupResources(ctx, roleCrossplane, roleMySQL, serviceAccount)
+	err = c.cleanupResources(ctx, roles, serviceAccount)
 	if err != nil {
 		log.Fatalln(err)
 	}

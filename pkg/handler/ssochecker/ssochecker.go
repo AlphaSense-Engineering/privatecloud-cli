@@ -31,14 +31,11 @@ var _ handler.Handler = &SSOChecker{}
 // It returns nothing on success, or an error on failure.
 func (c *SSOChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	const (
-		// secretNamespace is the namespace of the secret that contains the SSO configuration.
-		secretNamespace = "platform"
-
 		// secretName is the name of the secret that contains the SSO configuration.
 		secretName = "sso-config" // nolint:gosec
 	)
 
-	secret, err := c.clientset.CoreV1().Secrets(secretNamespace).Get(ctx, secretName, metav1.GetOptions{})
+	secret, err := c.clientset.CoreV1().Secrets(constant.NamespacePlatform).Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

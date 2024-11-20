@@ -26,4 +26,7 @@ const (
 
 	// NamespaceMySQL is the namespace for the MySQL.
 	NamespaceMySQL = "mysql"
+
+	// NamespacePlatform is the namespace for the platform.
+	NamespacePlatform = "platform"
 )
