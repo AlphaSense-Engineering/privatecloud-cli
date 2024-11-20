@@ -6,15 +6,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// root is the run function for the Root command.
+func root(cmd *cobra.Command, _ []string) {
+	_ = cmd.Help()
+}
+
 // Root returns the root command for the application.
 func Root() *cobra.Command {
 	return &cobra.Command{
 		Use: constant.AppName,
 		Run: root,
 	}
-}
-
-// root is the run function for the Root command.
-func root(cmd *cobra.Command, _ []string) {
-	_ = cmd.Help()
 }

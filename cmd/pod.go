@@ -37,23 +37,6 @@ var (
 	errFailedToCheckInfrastructure = errors.New("failed to check infrastructure")
 )
 
-// Pod returns the command to run the pod.
-func Pod() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "pod",
-		Short: "Run the pod",
-		Long: `Pod checks the infrastructure of the cluster where it is running on before the installer can proceed.
-
-When running this command, provide the environment configuration as a base64 encoded YAML file via the ENVCONFIG environment variable.
-
-You are not supposed to run this command manually, unless you know what you are doing.`,
-		Run:    pod,
-		Hidden: true,
-	}
-
-	return cmd
-}
-
 // pod is the run function for the Pod command.
 //
 // nolint:funlen
@@ -165,4 +148,21 @@ func pod(_ *cobra.Command, _ []string) {
 	}
 
 	log.Println(logMsgInfraCheckCompletedSuccessfully)
+}
+
+// Pod returns the command to run the pod.
+func Pod() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "pod",
+		Short: "Run the pod",
+		Long: `Pod checks the infrastructure of the cluster where it is running on before the installer can proceed.
+
+When running this command, provide the environment configuration as a base64 encoded YAML file via the ENVCONFIG environment variable.
+
+You are not supposed to run this command manually, unless you know what you are doing.`,
+		Run:    pod,
+		Hidden: true,
+	}
+
+	return cmd
 }
