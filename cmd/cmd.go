@@ -1,6 +1,10 @@
 // Package cmd is the package that contains all of the commands for the application.
 package cmd
 
+import (
+	"github.com/spf13/cobra"
+)
+
 const (
 	// logMsgKubeLoadedConfig is the message that is logged when the Kubernetes configuration is loaded from the specified path.
 	logMsgKubeLoadedConfig = "loaded Kubernetes configuration from %s"
@@ -21,3 +25,9 @@ const (
 	// namespaceCrossplane is the namespace for the Crossplane.
 	namespaceCrossplane = "crossplane"
 )
+
+// cmd is the interface that all commands must implement.
+type cmd interface {
+	// Run is the run function for the command.
+	Run(*cobra.Command, []string)
+}

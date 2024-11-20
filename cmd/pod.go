@@ -37,10 +37,15 @@ var (
 	errFailedToCheckInfrastructure = errors.New("failed to check infrastructure")
 )
 
-// pod is the run function for the Pod command.
+// podCmd is the command that checks the infrastructure of the cluster where it is running on.
+type podCmd struct{}
+
+var _ cmd = &podCmd{}
+
+// Run is the run function for the Pod command.
 //
 // nolint:funlen
-func pod(_ *cobra.Command, _ []string) {
+func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 	const (
 		// logMsgPodStarted is the message that is logged when the pod starts.
 		logMsgPodStarted = "pod %s started"
@@ -150,9 +155,16 @@ func pod(_ *cobra.Command, _ []string) {
 	log.Println(logMsgInfraCheckCompletedSuccessfully)
 }
 
-// Pod returns the command to run the pod.
+// newPodCmd returns a new Pod command.
+func newPodCmd() *podCmd {
+	return &podCmd{}
+}
+
+// Pod returns a Cobra command that checks the infrastructure of the cluster where it is running on.
 func Pod() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := newPodCmd()
+
+	return &cobra.Command{
 		Use:   "pod",
 		Short: "Run the pod",
 		Long: `Pod checks the infrastructure of the cluster where it is running on before the installer can proceed.
@@ -160,9 +172,7 @@ func Pod() *cobra.Command {
 When running this command, provide the environment configuration as a base64 encoded YAML file via the ENVCONFIG environment variable.
 
 You are not supposed to run this command manually, unless you know what you are doing.`,
-		Run:    pod,
+		Run:    cmd.Run,
 		Hidden: true,
 	}
-
-	return cmd
 }

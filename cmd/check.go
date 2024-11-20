@@ -112,6 +112,8 @@ type checkCmd struct {
 	clientsetPod typedcorev1.PodInterface
 }
 
+var _ cmd = &checkCmd{}
+
 // setupClientsets sets up the clientsets.
 func (c *checkCmd) setupClientsets() (err error) {
 	c.clientset, err = kubernetes.NewForConfig(c.kubeConfig)
@@ -532,7 +534,7 @@ func newCheckCmd() *checkCmd {
 	return &checkCmd{}
 }
 
-// Check returns a Cobra command for checking the infrastructure.
+// Check returns a Cobra command to check the infrastructure.
 func Check() *cobra.Command {
 	cmd := newCheckCmd()
 
