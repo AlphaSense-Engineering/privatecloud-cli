@@ -3,9 +3,11 @@ package tlschecker
 
 import (
 	"context"
+	"crypto/tls"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -28,12 +30,14 @@ func (c *TLSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		secretName = "default-tls"
 	)
 
-	_, err := c.clientset.CoreV1().Secrets(constant.NamespaceAlphaSense).Get(ctx, secretName, metav1.GetOptions{})
+	secret, err := c.clientset.CoreV1().Secrets(constant.NamespaceAlphaSense).Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Check the TLS validity.
+	if _, err = tls.X509KeyPair(secret.Data[corev1.TLSCertKey], secret.Data[corev1.TLSPrivateKeyKey]); err != nil {
+		return nil, err
+	}
 
 	return []any{}, nil
 }
