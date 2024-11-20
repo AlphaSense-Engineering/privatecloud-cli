@@ -18,6 +18,7 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/jwtchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/oidcchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/smtpchecker"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/ssochecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/tlschecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -37,6 +38,9 @@ var (
 
 	// errFailedToCheckSMTP is the error that occurs when the SMTP is not checked.
 	errFailedToCheckSMTP = errors.New("failed to check SMTP")
+
+	// errFailedToCheckSSO is the error that occurs when the SSO is not checked.
+	errFailedToCheckSSO = errors.New("failed to check SSO")
 
 	// errFailedToCheckOIDCURL is the error that occurs when the OIDC URL is not checked.
 	errFailedToCheckOIDCURL = errors.New("failed to check OIDC URL")
@@ -68,6 +72,8 @@ type AWSChecker struct {
 	tlsChecker *tlschecker.TLSChecker
 	// smtpChecker is the SMTP checker.
 	smtpChecker *smtpchecker.SMTPChecker
+	// ssoChecker is the SSO checker.
+	ssoChecker *ssochecker.SSOChecker
 	// oidcChecker is the OIDC checker.
 	oidcChecker *oidcchecker.OIDCChecker
 	// jwtRetriever is the JWT retriever.
@@ -85,6 +91,8 @@ func (c *AWSChecker) setup() {
 	c.tlsChecker = tlschecker.New(c.clientset)
 
 	c.smtpChecker = smtpchecker.New(c.clientset)
+
+	c.ssoChecker = ssochecker.New(c.clientset)
 
 	c.oidcChecker = oidcchecker.New(c.vcloud, c.envConfig, c.httpClient)
 
@@ -109,6 +117,9 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 
 		// logMsgSMTPChecked is the message that is logged when the SMTP is checked.
 		logMsgSMTPChecked = "checked SMTP"
+
+		// logMsgSSOChecked is the message that is logged when the SSO is checked.
+		logMsgSSOChecked = "checked SSO"
 
 		// logMsgOIDCURLChecked is the message that is logged when the OIDC URL is checked.
 		logMsgOIDCURLChecked = "checked OIDC URL"
@@ -140,6 +151,12 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	}
 
 	log.Println(logMsgSMTPChecked)
+
+	if _, err := c.ssoChecker.Handle(ctx); err != nil {
+		return nil, multierr.Combine(errFailedToCheckSSO, err)
+	}
+
+	log.Println(logMsgSSOChecked)
 
 	jwksURI, err := util.UnwrapValErr[*string](c.oidcChecker.Handle(ctx))
 	if err != nil {

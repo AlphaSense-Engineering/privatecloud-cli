@@ -2,6 +2,12 @@
 
 set -euox pipefail
 
+trap '[ -n "$(git stash list)" ] && git stash pop' INT TERM
+
+if [ -n "$(git status --porcelain)" ]; then
+  git diff --cached --quiet || git stash --keep-index
+fi
+
 npx commitlint --last --verbose
 
 npx commitlint --from origin/main --to HEAD --verbose
@@ -26,4 +32,8 @@ yamllint -f parsable .
 
 if [ -n "${GITHUB_ACTIONS:-}" ] && [ -n "$(git status --porcelain)" ]; then
   exit 1
+fi
+
+if [ -n "$(git stash list)" ]; then
+  git stash pop
 fi
