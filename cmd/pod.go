@@ -138,7 +138,7 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 
 	log.Printf(logMsgServiceAccountCreated, namespaceCrossplane, serviceAccountName)
 
-	infraChecker, err := infrachecker.New(vcloud, envConfig, clientset, http.DefaultClient)
+	infraChecker, err := infrachecker.New(ctx, vcloud, envConfig, clientset, http.DefaultClient)
 	if err != nil {
 		log.Fatalln(multierr.Combine(errFailedToCreateInfraChecker, err))
 

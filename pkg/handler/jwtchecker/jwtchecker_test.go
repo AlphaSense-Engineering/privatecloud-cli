@@ -67,14 +67,14 @@ var constJWKsJSON = jwkset.JWKSMarshal{
 }
 
 // setupJWTCheckerTest creates a new JWTChecker instance for testing.
-func setupJWTCheckerTest() (*JWTChecker, *string) {
+func setupJWTCheckerTest() *JWTChecker {
 	mockHTTPServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 
 		_ = json.NewEncoder(w).Encode(constJWKsJSON)
 	}))
 
-	return New(mockHTTPServer.Client()), &mockHTTPServer.URL
+	return New(mockHTTPServer.Client(), &mockHTTPServer.URL)
 }
 
 // TestJWTChecker_Check tests the Check method of the JWTChecker.
@@ -108,9 +108,9 @@ func TestJWTChecker_Check(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			jwtChecker, jwksURI := setupJWTCheckerTest()
+			jwtChecker := setupJWTCheckerTest()
 
-			_, gotErr := jwtChecker.Handle(context.TODO(), jwksURI, tc.jwts)
+			_, gotErr := jwtChecker.Handle(context.TODO(), tc.jwts)
 
 			if tc.wantErr != nil {
 				assert.Error(t, gotErr, "expected error %v, got %v", tc.wantErr, gotErr)

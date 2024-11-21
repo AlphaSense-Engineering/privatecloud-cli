@@ -13,37 +13,29 @@ import (
 )
 
 var (
-	// errJWKSURIRequired is an error that occurs when the JWKS URI is required.
-	errJWKSURIRequired = errors.New("JWKS URI is required")
-
 	// errJWTNotValid is an error that occurs when the JWT is not valid.
-	errJWTNotValid = errors.New("JWT is not valid")
+	errJWTNotValid = errors.New("jwt is not valid")
 )
 
 // JWTChecker is the type that contains the check functions for JWT.
 type JWTChecker struct {
 	// httpClient is the HTTP client.
 	httpClient *http.Client
+	// jwksURI is the JWKS URI.
+	jwksURI *string
 }
 
 var _ handler.Handler = &JWTChecker{}
 
 // Handle is the function that handles the JWT checking.
 //
-// The first argument is expected to be a pointer to a string representing the JWKS URI.
-// The second argument is expected to be a slice of JWTs to be checked.
+// The argument is expected to be a slice of JWTs to be checked.
 // It returns nothing on success, or an error on failure.
 func (c *JWTChecker) Handle(_ context.Context, args ...any) ([]any, error) {
-	jwksURI := handler.ArgAsType[*string](args, 0)
-
-	if jwksURI == nil {
-		return nil, errJWKSURIRequired
-	}
-
-	jwts := handler.ArgAsType[[]*string](args, 1)
+	jwts := handler.ArgAsType[[]*string](args, 0)
 
 	for _, vjwt := range jwts {
-		resp, err := c.httpClient.Get(*jwksURI)
+		resp, err := c.httpClient.Get(*c.jwksURI)
 		if err != nil {
 			return nil, err
 		}
@@ -73,6 +65,6 @@ func (c *JWTChecker) Handle(_ context.Context, args ...any) ([]any, error) {
 }
 
 // New is the function that creates a new JWT checker.
-func New(httpClient *http.Client) *JWTChecker {
-	return &JWTChecker{httpClient: httpClient}
+func New(httpClient *http.Client, jwksURI *string) *JWTChecker {
+	return &JWTChecker{httpClient: httpClient, jwksURI: jwksURI}
 }

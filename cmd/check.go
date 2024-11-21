@@ -84,9 +84,10 @@ const (
 
 	// flagDockerRepo is the name of the flag for the Docker repository.
 	flagDockerRepo = "docker-repo"
-
 	// flagDockerImage is the name of the flag for the Docker image.
 	flagDockerImage = "docker-image"
+	// flagImagePullSecret is the name of the flag for the image pull secret.
+	flagImagePullSecret = "image-pull-secret" // nolint:gosec
 )
 
 // namespaceKubeSystem is the namespace for the Kubernetes system.
@@ -96,15 +97,20 @@ const namespaceKubeSystem = "kube-system"
 type roles struct {
 	// alphaSense is the role for the alphasense namespace.
 	alphaSense *rbacv1.Role
-
 	// crossplane is the role for the crossplane namespace.
 	crossplane *rbacv1.Role
-
 	// mySQL is the role for the mysql namespace.
 	mySQL *rbacv1.Role
-
 	// platform is the role for the platform namespace.
 	platform *rbacv1.Role
+}
+
+// namespaceRole is the struct that contains the namespace and role.
+type namespaceRole struct {
+	// namespace is the namespace.
+	namespace string
+	// role is the role.
+	role *rbacv1.Role
 }
 
 // checkCmd is the command to check the infrastructure.
@@ -245,21 +251,11 @@ func (c *checkCmd) createRoles(ctx context.Context) (*roles, error) {
 }
 
 // createRoleBindings creates the role bindings.
-func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccount *corev1.ServiceAccount, roles *roles) error {
+func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccount *corev1.ServiceAccount, namespaceRoles []namespaceRole) error {
 	// logMsgRoleBindingCreated is the message that is logged when the role binding is created.
 	const logMsgRoleBindingCreated = "created %s/%s RoleBinding"
 
 	roleBindingName := fmt.Sprintf("%s-rolebinding", constant.AppName)
-
-	namespaceRoles := []struct {
-		namespace string
-		role      *rbacv1.Role
-	}{
-		{constant.NamespaceAlphaSense, roles.alphaSense},
-		{namespaceCrossplane, roles.crossplane},
-		{constant.NamespaceMySQL, roles.mySQL},
-		{constant.NamespacePlatform, roles.platform},
-	}
 
 	for _, pair := range namespaceRoles {
 		if _, err := c.clientset.RbacV1().RoleBindings(pair.namespace).Create(ctx, &rbacv1.RoleBinding{
@@ -297,7 +293,7 @@ func (c *checkCmd) createPod(ctx context.Context, serviceAccount *corev1.Service
 		return multierr.Combine(errFailedToMarshalEnvConfig, err)
 	}
 
-	if _, err = c.clientsetPod.Create(ctx, &corev1.Pod{
+	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: constant.AppName,
 		},
@@ -320,7 +316,17 @@ func (c *checkCmd) createPod(ctx context.Context, serviceAccount *corev1.Service
 			}},
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
-	}, metav1.CreateOptions{}); err != nil {
+	}
+
+	imagePullSecretName := util.Flag(c.cobraCmd, flagImagePullSecret)
+
+	if imagePullSecretName != constant.EmptyString {
+		pod.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{
+			Name: imagePullSecretName,
+		}}
+	}
+
+	if _, err = c.clientsetPod.Create(ctx, pod, metav1.CreateOptions{}); err != nil {
 		return multierr.Combine(errFailedToCreatePod, err)
 	}
 
@@ -398,7 +404,7 @@ func (c *checkCmd) streamPodLogs(ctx context.Context) error {
 }
 
 // cleanupResources cleans up the resources.
-func (c *checkCmd) cleanupResources(ctx context.Context, roles *roles, serviceAccount *corev1.ServiceAccount) error {
+func (c *checkCmd) cleanupResources(ctx context.Context, namespaceRoles []namespaceRole, serviceAccount *corev1.ServiceAccount) error {
 	// logMsgResourcesCleanedUp is the message that is logged when the resources are cleaned up.
 	const logMsgResourcesCleanedUp = "resources cleaned up"
 
@@ -413,15 +419,7 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roles *roles, serviceAc
 
 	roleBindingName := fmt.Sprintf("%s-rolebinding", constant.AppName)
 
-	namespaces := []struct {
-		namespace string
-		role      *rbacv1.Role
-	}{
-		{constant.NamespaceMySQL, roles.mySQL},
-		{namespaceCrossplane, roles.crossplane},
-	}
-
-	for _, ns := range namespaces {
+	for _, ns := range namespaceRoles {
 		if err = c.clientset.RbacV1().RoleBindings(ns.namespace).Delete(ctx, roleBindingName, metav1.DeleteOptions{}); err != nil {
 			return multierr.Combine(errFailedToDeleteRoleBinding, err)
 		}
@@ -507,7 +505,14 @@ func (c *checkCmd) Run(cobraCmd *cobra.Command, args []string) {
 		log.Fatalln(err)
 	}
 
-	err = c.createRoleBindings(ctx, serviceAccount, roles)
+	namespaceRoles := []namespaceRole{
+		{constant.NamespaceAlphaSense, roles.alphaSense},
+		{namespaceCrossplane, roles.crossplane},
+		{constant.NamespaceMySQL, roles.mySQL},
+		{constant.NamespacePlatform, roles.platform},
+	}
+
+	err = c.createRoleBindings(ctx, serviceAccount, namespaceRoles)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -527,7 +532,7 @@ func (c *checkCmd) Run(cobraCmd *cobra.Command, args []string) {
 		log.Fatalln(err)
 	}
 
-	err = c.cleanupResources(ctx, roles, serviceAccount)
+	err = c.cleanupResources(ctx, namespaceRoles, serviceAccount)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -574,8 +579,9 @@ If you do not specify the Kubernetes configuration file, the command will use th
 		"path to the Kubernetes configuration file to use for the check (or KUBECONFIG environment variable)",
 	)
 
-	cobraCmd.Flags().String(flagDockerRepo, defaultDockerRepo, "the Docker repository to use for the pod image")
-	cobraCmd.Flags().String(flagDockerImage, constDefaultDockerImage, "the Docker image to use for the pod")
+	cobraCmd.Flags().String(flagDockerRepo, defaultDockerRepo, "the Docker repository to use for the Pod image")
+	cobraCmd.Flags().String(flagDockerImage, constDefaultDockerImage, "the Docker image to use for the Pod")
+	cobraCmd.Flags().String(flagImagePullSecret, constant.EmptyString, "the name of the image pull secret to use for the Pod")
 
 	return cobraCmd
 }
