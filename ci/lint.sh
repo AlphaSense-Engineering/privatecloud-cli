@@ -3,7 +3,9 @@
 set -euox pipefail
 
 stash_pop() {
+  set +e
   git stash pop $(git stash list --pretty="%gd %s" | grep "pre-lint-stash" | head -1 | awk "{print \$1}")
+  set -e
 }
 
 trap stash_pop INT TERM
