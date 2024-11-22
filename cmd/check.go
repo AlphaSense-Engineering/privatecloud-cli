@@ -29,15 +29,6 @@ import (
 )
 
 var (
-	// errFailedToReadEnvConfig is the error that is returned when the environment configuration cannot be read.
-	errFailedToReadEnvConfig = errors.New("failed to read environment configuration")
-
-	// errFailedToGetKubeConfig is the error that is returned when the Kubernetes configuration cannot be retrieved.
-	errFailedToGetKubeConfig = errors.New("failed to get Kubernetes configuration")
-
-	// errFailedToCreateKubernetesClientset is the error that is returned when the Kubernetes clientset cannot be created.
-	errFailedToCreateKubernetesClientset = errors.New("failed to create Kubernetes clientset")
-
 	// errFailedToGetPod is the error that is returned when the pod cannot be retrieved.
 	errFailedToGetPod = errors.New("failed to get Pod")
 
@@ -181,13 +172,13 @@ func (c *checkCmd) ensureNamespace(ctx context.Context) error {
 
 	if _, err := c.clientsetNamespace.Create(ctx, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: namespaceCrossplane,
+			Name: constant.NamespaceCrossplane,
 		},
 	}, metav1.CreateOptions{}); err != nil && !apierrors.IsAlreadyExists(err) {
 		return multierr.Combine(errFailedToEnsureNamespace, err)
 	}
 
-	log.Printf(logMsgNamespaceEnsured, namespaceCrossplane)
+	log.Printf(logMsgNamespaceEnsured, constant.NamespaceCrossplane)
 
 	return nil
 }
@@ -206,7 +197,7 @@ func (c *checkCmd) createRoles(ctx context.Context) (*roles, error) {
 		{constant.NamespaceAlphaSense, []rbacv1.PolicyRule{
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"secrets"}, Verbs: []string{rbacv1.VerbAll}},
 		}},
-		{namespaceCrossplane, []rbacv1.PolicyRule{
+		{constant.NamespaceCrossplane, []rbacv1.PolicyRule{
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"serviceaccounts"}, Verbs: []string{rbacv1.VerbAll}},
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"serviceaccounts/token"}, Verbs: []string{rbacv1.VerbAll}},
 		}},
@@ -238,7 +229,7 @@ func (c *checkCmd) createRoles(ctx context.Context) (*roles, error) {
 		switch pair.namespace {
 		case constant.NamespaceAlphaSense:
 			roles.alphaSense = role
-		case namespaceCrossplane:
+		case constant.NamespaceCrossplane:
 			roles.crossplane = role
 		case constant.NamespaceMySQL:
 			roles.mySQL = role
@@ -335,17 +326,17 @@ func (c *checkCmd) createPod(ctx context.Context, serviceAccount *corev1.Service
 	return nil
 }
 
-// waitForPodToRun waits for the pod to run.
-func (c *checkCmd) waitForPodToRun(ctx context.Context) error {
+// waitForPodToSucceed waits for the pod to run.
+func (c *checkCmd) waitForPodToSucceed(ctx context.Context) error {
 	const (
-		// logMsgPodWaitingToRun is the message that is logged when the pod is waiting to run.
-		logMsgPodWaitingToRun = "waiting for %s/%s Pod to run..."
+		// logMsgPodWaitingToSucceed is the message that is logged when the pod is waiting to succeed.
+		logMsgPodWaitingToSucceed = "waiting for %s/%s Pod to succeed..."
 
-		// logMsgPodRunning is the message that is logged when the pod is running.
-		logMsgPodRunning = "%s/%s Pod is running"
+		// logMsgPodSucceeded is the message that is logged when the pod succeeded.
+		logMsgPodSucceeded = "%s/%s Pod succeeded"
 	)
 
-	log.Printf(logMsgPodWaitingToRun, namespaceKubeSystem, constant.AppName)
+	log.Printf(logMsgPodWaitingToSucceed, namespaceKubeSystem, constant.AppName)
 
 	for {
 		pod, err := c.clientsetPod.Get(ctx, constant.AppName, metav1.GetOptions{})
@@ -353,8 +344,8 @@ func (c *checkCmd) waitForPodToRun(ctx context.Context) error {
 			return multierr.Combine(errFailedToGetPod, err)
 		}
 
-		if pod.Status.Phase == corev1.PodRunning {
-			log.Printf(logMsgPodRunning, namespaceKubeSystem, constant.AppName)
+		if pod.Status.Phase == corev1.PodSucceeded {
+			log.Printf(logMsgPodSucceeded, namespaceKubeSystem, constant.AppName)
 
 			break
 		}
@@ -507,7 +498,7 @@ func (c *checkCmd) Run(cobraCmd *cobra.Command, args []string) {
 
 	namespaceRoles := []namespaceRole{
 		{constant.NamespaceAlphaSense, roles.alphaSense},
-		{namespaceCrossplane, roles.crossplane},
+		{constant.NamespaceCrossplane, roles.crossplane},
 		{constant.NamespaceMySQL, roles.mySQL},
 		{constant.NamespacePlatform, roles.platform},
 	}
@@ -522,7 +513,7 @@ func (c *checkCmd) Run(cobraCmd *cobra.Command, args []string) {
 		log.Fatalln(err)
 	}
 
-	err = c.waitForPodToRun(ctx)
+	err = c.waitForPodToSucceed(ctx)
 	if err != nil {
 		log.Fatalln(err)
 	}

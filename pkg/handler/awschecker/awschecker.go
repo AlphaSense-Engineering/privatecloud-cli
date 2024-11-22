@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud/awscloudutil"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
@@ -26,8 +25,6 @@ import (
 
 // AWSChecker is the type that contains the infrastructure check functions for AWS.
 type AWSChecker struct {
-	// vcloud is the cloud provider.
-	vcloud cloud.Cloud
 	// envConfig is the environment configuration.
 	envConfig *envconfig.EnvConfig
 	// clientset is the Kubernetes client.
@@ -120,9 +117,8 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 }
 
 // New is the function that creates a new AWS checker.
-func New(vcloud cloud.Cloud, envConfig *envconfig.EnvConfig, clientset kubernetes.Interface, httpClient *http.Client, jwksURI *string) *AWSChecker {
+func New(envConfig *envconfig.EnvConfig, clientset kubernetes.Interface, httpClient *http.Client, jwksURI *string) *AWSChecker {
 	c := &AWSChecker{
-		vcloud:     vcloud,
 		envConfig:  envConfig,
 		clientset:  clientset,
 		httpClient: httpClient,

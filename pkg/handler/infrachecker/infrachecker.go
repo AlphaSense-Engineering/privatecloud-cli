@@ -39,9 +39,9 @@ func New(
 	}
 
 	if vcloud == cloud.AWS {
-		return awschecker.New(vcloud, envConfig, clientset, httpClient, jwksURI), nil
+		return awschecker.New(envConfig, clientset, httpClient, jwksURI), nil
 	} else if vcloud == cloud.Azure {
-		return azurechecker.New(), nil
+		return azurechecker.New(envConfig, clientset, httpClient, jwksURI), nil
 	}
 
 	return nil, cloud.NewUnsupportedCloudError(vcloud)

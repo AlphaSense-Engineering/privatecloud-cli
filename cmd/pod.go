@@ -29,6 +29,9 @@ var (
 	// errFailedToDecodeEnvConfig is the error that is returned when the envconfig data from the flag cannot be decoded.
 	errFailedToDecodeEnvConfig = errors.New("failed to decode envconfig")
 
+	// errFailedToEnsureServiceAccount is the error that is returned when the service account cannot be ensured.
+	errFailedToEnsureServiceAccount = errors.New("failed to ensure ServiceAccount")
+
 	// errFailedToCreateInfraChecker is the error that is returned when the infrastructure checker cannot be created.
 	errFailedToCreateInfraChecker = errors.New("failed to create infrastructure checker")
 
@@ -51,6 +54,9 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 
 		// logMsgEnvConfigDecoded is the message that is logged when the environment configuration is decoded.
 		logMsgEnvConfigDecoded = "decoded environment configuration"
+
+		// logMsgServiceAccountEnsured is the message that is logged when the service account is ensured.
+		logMsgServiceAccountEnsured = "ensured %s/%s ServiceAccount"
 
 		// logMsgInfraCheckCompletedSuccessfully is the message that is logged when the infrastructure check is completed successfully.
 		logMsgInfraCheckCompletedSuccessfully = "infrastructure check completed successfully"
@@ -124,7 +130,7 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 
 	ctx := context.Background()
 
-	_, err = clientset.CoreV1().ServiceAccounts(namespaceCrossplane).Create(ctx,
+	_, err = clientset.CoreV1().ServiceAccounts(constant.NamespaceCrossplane).Create(ctx,
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: serviceAccountName,
@@ -133,10 +139,10 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 		metav1.CreateOptions{},
 	)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
-		log.Fatalln(multierr.Combine(errFailedToCreateServiceAccount, err))
+		log.Fatalln(multierr.Combine(errFailedToEnsureServiceAccount, err))
 	}
 
-	log.Printf(logMsgServiceAccountCreated, namespaceCrossplane, serviceAccountName)
+	log.Printf(logMsgServiceAccountEnsured, constant.NamespaceCrossplane, serviceAccountName)
 
 	infraChecker, err := infrachecker.New(ctx, vcloud, envConfig, clientset, http.DefaultClient)
 	if err != nil {

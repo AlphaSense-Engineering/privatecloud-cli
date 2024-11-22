@@ -3,17 +3,47 @@ package azurechecker
 
 import (
 	"context"
+	"log"
+	"net/http"
 
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/azurecrossplanerolechecker"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/azurejwtretriever"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/cloudchecker"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/jwtchecker"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization"
+	"go.uber.org/multierr"
+	"k8s.io/client-go/kubernetes"
 )
 
 // AzureChecker is the type that contains the infrastructure check functions for Azure.
-type AzureChecker struct{}
+type AzureChecker struct {
+	// envConfig is the environment configuration.
+	envConfig *envconfig.EnvConfig
+	// clientset is the Kubernetes client.
+	clientset kubernetes.Interface
+	// httpClient is the HTTP client.
+	httpClient *http.Client
+	// jwksURI is the JWKS URI.
+	jwksURI *string
+
+	// jwtRetriever is the JWT retriever.
+	jwtRetriever *azurejwtretriever.AzureJWTRetriever
+	// jwtChecker is the JWT checker.
+	jwtChecker *jwtchecker.JWTChecker
+}
 
 var _ handler.Handler = &AzureChecker{}
 
 // setup is the function that sets up the Azure checker.
-func (c *AzureChecker) setup() {}
+func (c *AzureChecker) setup() {
+	c.jwtRetriever = azurejwtretriever.New(c.clientset)
+
+	c.jwtChecker = jwtchecker.New(c.httpClient, c.jwksURI)
+}
 
 // Handle is the function that handles the infrastructure check.
 //
@@ -21,13 +51,66 @@ func (c *AzureChecker) setup() {}
 // It returns nothing on success, or an error on failure.
 //
 // nolint:funlen
-func (c *AzureChecker) Handle(_ context.Context, _ ...any) ([]any, error) {
+func (c *AzureChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
+	jwts, err := util.ConvertSliceErr[any, *string](c.jwtRetriever.Handle(ctx))
+	if err != nil {
+		return nil, multierr.Combine(cloudchecker.ErrFailedToRetrieveJWTs, err)
+	}
+
+	log.Println(cloudchecker.LogMsgJWTsRetrieved)
+
+	if _, err := c.jwtChecker.Handle(ctx, jwts); err != nil {
+		return nil, multierr.Combine(cloudchecker.ErrFailedToCheckJWTs, err)
+	}
+
+	log.Println(cloudchecker.LogMsgJWTsChecked)
+
+	jwt := jwts[0]
+
+	err = func() error {
+		cred, err := azidentity.NewClientAssertionCredential(
+			c.envConfig.Spec.CloudSpec.Azure.TenantID,
+			c.envConfig.Spec.CloudSpec.Azure.ClientID,
+			func(context.Context) (string, error) {
+				return *jwt, nil
+			},
+			nil,
+		)
+		if err != nil {
+			return err
+		}
+
+		roleDefClient, err := armauthorization.NewRoleDefinitionsClient(cred, nil)
+		if err != nil {
+			return err
+		}
+
+		crossplaneRoleChecker := azurecrossplanerolechecker.New(c.envConfig, roleDefClient)
+
+		if _, err := crossplaneRoleChecker.Handle(ctx); err != nil {
+			return err
+		}
+
+		return nil
+	}()
+
+	if err != nil {
+		return nil, multierr.Combine(cloudchecker.ErrFailedToCheckCrossplaneRole, err)
+	}
+
+	log.Println(cloudchecker.LogMsgCrossplaneRoleChecked)
+
 	return []any{}, nil
 }
 
 // New is the function that creates a new Azure checker.
-func New() *AzureChecker {
-	c := &AzureChecker{}
+func New(envConfig *envconfig.EnvConfig, clientset kubernetes.Interface, httpClient *http.Client, jwksURI *string) *AzureChecker {
+	c := &AzureChecker{
+		envConfig:  envConfig,
+		clientset:  clientset,
+		httpClient: httpClient,
+		jwksURI:    jwksURI,
+	}
 
 	c.setup()
 

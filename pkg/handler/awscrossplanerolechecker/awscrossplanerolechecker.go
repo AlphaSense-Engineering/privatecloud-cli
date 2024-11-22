@@ -377,46 +377,6 @@ func (c *AWSCrossplaneRoleChecker) validatePolicyDocument(document rolePolicyDoc
 	return true
 }
 
-// Handle is the function that handles the AWS Crossplane role check.
-//
-// The arguments are not used.
-// It returns nothing on success, or an error on failure.
-func (c *AWSCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
-	roleName := awscloudutil.CrossplaneRoleName(c.envConfig.Spec.ClusterName)
-
-	role, err := c.iam.GetRole(ctx, &iam.GetRoleInput{RoleName: aws.String(roleName)})
-	if err != nil {
-		return nil, err
-	}
-
-	if role.Role.AssumeRolePolicyDocument == nil {
-		return nil, errNoAssumeRolePolicyDocument
-	}
-
-	var assumeRolePolicyDocument rolePolicyDocument
-
-	assumeRolePolicyDocumentData, err := url.QueryUnescape(*role.Role.AssumeRolePolicyDocument)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = json.Unmarshal([]byte(assumeRolePolicyDocumentData), &assumeRolePolicyDocument); err != nil {
-		return nil, err
-	}
-
-	if !c.validatePolicyDocument(assumeRolePolicyDocument, constExpectedAssumeRolePolicyDocument) {
-		return nil, errAssumeRolePolicyDocumentMismatch
-	}
-
-	for suffix, expectedPolicyDocument := range constExpectedPolicyDocuments {
-		if err := c.processPolicyDocument(ctx, roleName, suffix, expectedPolicyDocument); err != nil {
-			return nil, err
-		}
-	}
-
-	return []any{}, nil
-}
-
 // processPolicyDocument is a function that processes the AWS policy document.
 func (c *AWSCrossplaneRoleChecker) processPolicyDocument(ctx context.Context, roleName, suffix string, expectedPolicyDocument rolePolicyDocument) error {
 	policyARN := aws.String(awscloudutil.ARN(
@@ -471,6 +431,46 @@ func (c *AWSCrossplaneRoleChecker) processPolicyDocument(ctx context.Context, ro
 	}
 
 	return nil
+}
+
+// Handle is the function that handles the AWS Crossplane role check.
+//
+// The arguments are not used.
+// It returns nothing on success, or an error on failure.
+func (c *AWSCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
+	roleName := awscloudutil.CrossplaneRoleName(c.envConfig.Spec.ClusterName)
+
+	role, err := c.iam.GetRole(ctx, &iam.GetRoleInput{RoleName: aws.String(roleName)})
+	if err != nil {
+		return nil, err
+	}
+
+	if role.Role.AssumeRolePolicyDocument == nil {
+		return nil, errNoAssumeRolePolicyDocument
+	}
+
+	var assumeRolePolicyDocument rolePolicyDocument
+
+	assumeRolePolicyDocumentData, err := url.QueryUnescape(*role.Role.AssumeRolePolicyDocument)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = json.Unmarshal([]byte(assumeRolePolicyDocumentData), &assumeRolePolicyDocument); err != nil {
+		return nil, err
+	}
+
+	if !c.validatePolicyDocument(assumeRolePolicyDocument, constExpectedAssumeRolePolicyDocument) {
+		return nil, errAssumeRolePolicyDocumentMismatch
+	}
+
+	for suffix, expectedPolicyDocument := range constExpectedPolicyDocuments {
+		if err := c.processPolicyDocument(ctx, roleName, suffix, expectedPolicyDocument); err != nil {
+			return nil, err
+		}
+	}
+
+	return []any{}, nil
 }
 
 // New is the function that creates a new AWS Crossplane role checker.

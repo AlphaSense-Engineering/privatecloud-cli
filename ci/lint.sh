@@ -2,11 +2,13 @@
 
 set -euox pipefail
 
-trap '[ -n "$(git stash list)" ] && git stash pop' INT TERM
+stash_pop() {
+  git stash pop $(git stash list --pretty="%gd %s" | grep "pre-lint-stash" | head -1 | awk "{print \$1}")
+}
 
-if [ -n "$(git status --porcelain)" ]; then
-  git diff --cached --quiet || git stash --keep-index
-fi
+trap stash_pop INT TERM
+
+git stash push -k -m "pre-lint-stash"
 
 npx commitlint --last --verbose
 
@@ -34,6 +36,4 @@ if [ -n "${GITHUB_ACTIONS:-}" ] && [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
-if [ -n "$(git stash list)" ]; then
-  git stash pop
-fi
+stash_pop

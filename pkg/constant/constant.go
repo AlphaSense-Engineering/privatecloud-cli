@@ -24,6 +24,9 @@ const (
 	// NamespaceAlphaSense is the namespace for the AlphaSense.
 	NamespaceAlphaSense = "alphasense"
 
+	// NamespaceCrossplane is the namespace for the Crossplane.
+	NamespaceCrossplane = "crossplane"
+
 	// NamespaceMySQL is the namespace for the MySQL.
 	NamespaceMySQL = "mysql"
 

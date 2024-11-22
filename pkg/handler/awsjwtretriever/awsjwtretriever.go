@@ -22,7 +22,7 @@ type AWSJWTRetriever struct {
 
 var _ handler.Handler = &AWSJWTRetriever{}
 
-// Handle is the function that handles the JWT retrieval.
+// Handle is the function that handles the JWT retrieval for AWS.
 //
 // The arguments are not used.
 // It returns a slice of JWTs on success, or an error on failure.
@@ -35,7 +35,7 @@ func (c *AWSJWTRetriever) Handle(ctx context.Context, _ ...any) (jwts []any, err
 		audience = "amazonaws.com"
 	)
 
-	clientsetSA := c.clientset.CoreV1().ServiceAccounts(jwtretriever.ServiceAccountsNamespace)
+	clientsetSA := c.clientset.CoreV1().ServiceAccounts(constant.NamespaceCrossplane)
 
 	serviceAccounts, err := clientsetSA.List(ctx, metav1.ListOptions{})
 	if err != nil {

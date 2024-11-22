@@ -1,7 +1,11 @@
 // Package awscloudutil is the package that contains the AWS cloud utility functions.
 package awscloudutil
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
+)
 
 // ARNType is the type of the ARN.
 type ARNType string
@@ -30,8 +34,5 @@ func ARN(accountID string, clusterName string, arnType ARNType, name string, suf
 
 // CrossplaneRoleName is a function that returns the name of the Crossplane role.
 func CrossplaneRoleName(clusterName string) string {
-	// fixedRoleName is the fixed part of the Crossplane role name.
-	const fixedRoleName = "crossplane-provider"
-
-	return fmt.Sprintf("%s-%s", fixedRoleName, clusterName)
+	return fmt.Sprintf("%s-%s", cloud.CrossplaneRoleNameSuffix, clusterName)
 }

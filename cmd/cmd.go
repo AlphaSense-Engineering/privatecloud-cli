@@ -2,7 +2,20 @@
 package cmd
 
 import (
+	"errors"
+
 	"github.com/spf13/cobra"
+)
+
+var (
+	// errFailedToReadEnvConfig is the error that is returned when the environment configuration cannot be read.
+	errFailedToReadEnvConfig = errors.New("failed to read environment configuration")
+
+	// errFailedToGetKubeConfig is the error that is returned when the Kubernetes configuration cannot be retrieved.
+	errFailedToGetKubeConfig = errors.New("failed to get Kubernetes configuration")
+
+	// errFailedToCreateKubernetesClientset is the error that is returned when the Kubernetes clientset cannot be created.
+	errFailedToCreateKubernetesClientset = errors.New("failed to create Kubernetes clientset")
 )
 
 const (
@@ -11,19 +24,11 @@ const (
 
 	// logMsgKubeClientsetCreated is the message that is logged when the Kubernetes clientset is created.
 	logMsgKubeClientsetCreated = "created Kubernetes clientset from configuration"
-
-	// logMsgServiceAccountCreated is the message that is logged when the service account is created.
-	logMsgServiceAccountCreated = "created %s/%s ServiceAccount"
 )
 
 const (
 	// envVarEnvConfig is the name of the environment variable that contains the base64 encoded environment configuration.
 	envVarEnvConfig = "ENVCONFIG"
-)
-
-const (
-	// namespaceCrossplane is the namespace for the Crossplane.
-	namespaceCrossplane = "crossplane"
 )
 
 // cmd is the interface that all commands must implement.

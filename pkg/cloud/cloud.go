@@ -17,6 +17,9 @@ const (
 	GCP Cloud = "gcp"
 )
 
+// CrossplaneRoleNameSuffix is the suffix of the Crossplane role name.
+const CrossplaneRoleNameSuffix = "crossplane-provider"
+
 // UnsupportedCloudError is the error that is returned when the cloud is unsupported.
 type UnsupportedCloudError struct {
 	// cloud is the cloud that is unsupported.
