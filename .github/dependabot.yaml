@@ -4,9 +4,26 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: daily
-
+      interval: weekly
+    groups:
+      main:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      sec:
+        applies-to: security-updates
+        patterns:
+          - "*"
   - package-ecosystem: gomod
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
+    groups:
+      main:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      sec:
+        applies-to: security-updates
+        patterns:
+          - "*"
