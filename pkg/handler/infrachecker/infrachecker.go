@@ -12,7 +12,6 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/awschecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/azurechecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/cloudchecker"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -29,12 +28,19 @@ func New(
 ) (handler.Handler, error) {
 	cloudChecker := cloudchecker.New(vcloud, envConfig, clientset, httpClient)
 
-	jwksURI, err := util.FirstValErr(util.ConvertSliceErr[any, *string](cloudChecker.Handle(ctx)))
+	var jwksURI *string
+
+	rawJWKSURI, err := cloudChecker.Handle(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if jwksURI == nil {
+	if rawJWKSURI != nil {
+		jwksURI, _ = rawJWKSURI[0].(*string)
+	}
+
+	// In GCP, we don't need to check the OIDC URL as it's not used.
+	if vcloud != cloud.GCP && jwksURI == nil {
 		return nil, errJWKSURIRequired
 	}
 

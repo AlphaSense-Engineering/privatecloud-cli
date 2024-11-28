@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud/gcpcloudutil"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/infrachecker"
@@ -128,17 +129,24 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 		log.Fatalln(cloud.NewUnsupportedCloudError(vcloud))
 	}
 
+	sa := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      serviceAccountName,
+			Namespace: constant.NamespaceCrossplane,
+		},
+	}
+
+	if vcloud == cloud.GCP {
+		sa.ObjectMeta.Annotations = map[string]string{
+			"iam.gke.io/gcp-service-account": gcpcloudutil.ServiceAccountAnnotation(envConfig.Spec.ClusterName, envConfig.Spec.CloudSpec.GCP.ProjectID),
+		}
+	}
+
 	ctx := context.Background()
 
-	_, err = clientset.CoreV1().ServiceAccounts(constant.NamespaceCrossplane).Create(ctx,
-		&corev1.ServiceAccount{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: serviceAccountName,
-			},
-		},
-		metav1.CreateOptions{},
-	)
-	if err != nil && !apierrors.IsAlreadyExists(err) {
+	if _, err = clientset.CoreV1().ServiceAccounts(constant.NamespaceCrossplane).Create(
+		ctx, sa, metav1.CreateOptions{},
+	); err != nil && !apierrors.IsAlreadyExists(err) {
 		log.Fatalln(multierr.Combine(errFailedToEnsureServiceAccount, err))
 	}
 

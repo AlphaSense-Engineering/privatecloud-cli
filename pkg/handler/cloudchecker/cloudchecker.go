@@ -150,6 +150,10 @@ func (c *CloudChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, multierr.Combine(errFailedToCheckOIDCURL, err)
 	}
 
+	if jwksURI == nil {
+		return nil, nil
+	}
+
 	log.Println(logMsgOIDCURLChecked)
 
 	return []any{jwksURI}, nil

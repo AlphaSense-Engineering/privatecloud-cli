@@ -70,6 +70,11 @@ func (c *OIDCChecker) Handle(_ context.Context, _ ...any) ([]any, error) {
 		wellKnownEndpoint = "/.well-known/openid-configuration"
 	)
 
+	// In GCP, we don't need to check the OIDC URL as it's not used.
+	if c.vcloud == cloud.GCP {
+		return nil, nil
+	}
+
 	oidcURL := c.envConfig.OIDCURL()
 
 	bytesOIDCURL := []byte(oidcURL)

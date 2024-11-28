@@ -2,6 +2,8 @@
 package util
 
 import (
+	"strconv"
+
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/spf13/cobra"
 )
@@ -19,4 +21,24 @@ func Flag(cmd *cobra.Command, name string) string {
 	}
 
 	return value.String()
+}
+
+// FlagBool returns the value of the flag as a bool, or false if the flag is not set.
+func FlagBool(cmd *cobra.Command, name string) bool {
+	flag := cmd.Flag(name)
+	if flag == nil {
+		return false
+	}
+
+	value := flag.Value
+	if value == nil {
+		return false
+	}
+
+	boolValue, err := strconv.ParseBool(value.String())
+	if err != nil {
+		return false
+	}
+
+	return boolValue
 }

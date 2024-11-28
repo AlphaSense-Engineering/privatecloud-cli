@@ -73,6 +73,9 @@ const (
 	// flagKubeConfig is the name of the flag for the Kubernetes configuration file.
 	flagKubeConfig = "kubeconfig"
 
+	// flagCleanupOnly is the name of the flag for the cleanup only flag.
+	flagCleanupOnly = "cleanup-only"
+
 	// flagDockerRepo is the name of the flag for the Docker repository.
 	flagDockerRepo = "docker-repo"
 	// flagDockerImage is the name of the flag for the Docker image.
@@ -84,24 +87,14 @@ const (
 // namespaceKubeSystem is the namespace for the Kubernetes system.
 const namespaceKubeSystem = "kube-system"
 
-// roles is the struct that contains the roles.
-type roles struct {
-	// alphaSense is the role for the alphasense namespace.
-	alphaSense *rbacv1.Role
-	// crossplane is the role for the crossplane namespace.
-	crossplane *rbacv1.Role
-	// mySQL is the role for the mysql namespace.
-	mySQL *rbacv1.Role
-	// platform is the role for the platform namespace.
-	platform *rbacv1.Role
-}
-
-// namespaceRole is the struct that contains the namespace and role.
-type namespaceRole struct {
-	// namespace is the namespace.
-	namespace string
-	// role is the role.
-	role *rbacv1.Role
+// constRoleNamespaces is the list of namespaces for the roles.
+//
+// Do not modify this variable, it is supposed to be constant.
+var constRoleNamespaces = []string{
+	constant.NamespaceAlphaSense,
+	constant.NamespaceCrossplane,
+	constant.NamespaceMySQL,
+	constant.NamespacePlatform,
 }
 
 // checkCmd is the command to check the infrastructure.
@@ -143,11 +136,9 @@ func (c *checkCmd) setupClientsets() (err error) {
 }
 
 // createServiceAccount creates the service account.
-func (c *checkCmd) createServiceAccount(ctx context.Context) (*corev1.ServiceAccount, error) {
+func (c *checkCmd) createServiceAccount(ctx context.Context, serviceAccountName string) error {
 	// logMsgServiceAccountCreated is the message that is logged when the service account is created.
 	const logMsgServiceAccountCreated = "created %s/%s ServiceAccount"
-
-	serviceAccountName := fmt.Sprintf("%s-sa", constant.AppName)
 
 	serviceAccount := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
@@ -157,12 +148,12 @@ func (c *checkCmd) createServiceAccount(ctx context.Context) (*corev1.ServiceAcc
 	}
 
 	if _, err := c.clientsetSA.Create(ctx, serviceAccount, metav1.CreateOptions{}); err != nil {
-		return nil, multierr.Combine(errFailedToCreateServiceAccount, err)
+		return multierr.Combine(errFailedToCreateServiceAccount, err)
 	}
 
 	log.Printf(logMsgServiceAccountCreated, namespaceKubeSystem, serviceAccount.Name)
 
-	return serviceAccount, nil
+	return nil
 }
 
 // ensureNamespace ensures the namespace.
@@ -184,11 +175,9 @@ func (c *checkCmd) ensureNamespace(ctx context.Context) error {
 }
 
 // createRoles creates the roles.
-func (c *checkCmd) createRoles(ctx context.Context) (*roles, error) {
+func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 	// logMsgRoleCreated is the message that is logged when the role is created.
 	const logMsgRoleCreated = "created %s/%s Role"
-
-	roleName := fmt.Sprintf("%s-role", constant.AppName)
 
 	namespacePolicyRules := []struct {
 		namespace string
@@ -209,8 +198,6 @@ func (c *checkCmd) createRoles(ctx context.Context) (*roles, error) {
 		},
 	}
 
-	roles := &roles{}
-
 	for _, pair := range namespacePolicyRules {
 		role := &rbacv1.Role{
 			ObjectMeta: metav1.ObjectMeta{
@@ -221,61 +208,48 @@ func (c *checkCmd) createRoles(ctx context.Context) (*roles, error) {
 		}
 
 		if _, err := c.clientset.RbacV1().Roles(pair.namespace).Create(ctx, role, metav1.CreateOptions{}); err != nil {
-			return nil, multierr.Combine(errFailedToCreateRole, err)
+			return multierr.Combine(errFailedToCreateRole, err)
 		}
 
 		log.Printf(logMsgRoleCreated, pair.namespace, role.Name)
-
-		switch pair.namespace {
-		case constant.NamespaceAlphaSense:
-			roles.alphaSense = role
-		case constant.NamespaceCrossplane:
-			roles.crossplane = role
-		case constant.NamespaceMySQL:
-			roles.mySQL = role
-		case constant.NamespacePlatform:
-			roles.platform = role
-		}
 	}
 
-	return roles, nil
+	return nil
 }
 
 // createRoleBindings creates the role bindings.
-func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccount *corev1.ServiceAccount, namespaceRoles []namespaceRole) error {
+func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccountName string, roleBindingName string, roleName string) error {
 	// logMsgRoleBindingCreated is the message that is logged when the role binding is created.
 	const logMsgRoleBindingCreated = "created %s/%s RoleBinding"
 
-	roleBindingName := fmt.Sprintf("%s-rolebinding", constant.AppName)
-
-	for _, pair := range namespaceRoles {
-		if _, err := c.clientset.RbacV1().RoleBindings(pair.namespace).Create(ctx, &rbacv1.RoleBinding{
+	for _, ns := range constRoleNamespaces {
+		if _, err := c.clientset.RbacV1().RoleBindings(ns).Create(ctx, &rbacv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      roleBindingName,
-				Namespace: pair.namespace,
+				Namespace: ns,
 			},
 			Subjects: []rbacv1.Subject{{
 				Kind:      rbacv1.ServiceAccountKind,
-				Name:      serviceAccount.Name,
+				Name:      serviceAccountName,
 				Namespace: namespaceKubeSystem,
 			}},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
 				Kind:     "Role",
-				Name:     pair.role.Name,
+				Name:     roleName,
 			},
 		}, metav1.CreateOptions{}); err != nil {
 			return multierr.Combine(errFailedToCreateRoleBinding, err)
 		}
 
-		log.Printf(logMsgRoleBindingCreated, pair.namespace, roleBindingName)
+		log.Printf(logMsgRoleBindingCreated, ns, roleBindingName)
 	}
 
 	return nil
 }
 
 // createPod creates the pod.
-func (c *checkCmd) createPod(ctx context.Context, serviceAccount *corev1.ServiceAccount) error {
+func (c *checkCmd) createPod(ctx context.Context, serviceAccountName string) error {
 	// logMsgPodCreated is the message that is logged when the pod is created.
 	const logMsgPodCreated = "created %s/%s Pod"
 
@@ -289,7 +263,7 @@ func (c *checkCmd) createPod(ctx context.Context, serviceAccount *corev1.Service
 			Name: constant.AppName,
 		},
 		Spec: corev1.PodSpec{
-			ServiceAccountName: serviceAccount.Name,
+			ServiceAccountName: serviceAccountName,
 			Containers: []corev1.Container{{
 				Name: constant.AppName,
 				Image: strings.Join(
@@ -334,6 +308,9 @@ func (c *checkCmd) waitForPodToSucceed(ctx context.Context) error {
 
 		// logMsgPodSucceeded is the message that is logged when the pod succeeded.
 		logMsgPodSucceeded = "%s/%s Pod succeeded"
+
+		// logMsgPodFailed is the message that is logged when the pod failed.
+		logMsgPodFailed = "%s/%s Pod failed"
 	)
 
 	log.Printf(logMsgPodWaitingToSucceed, namespaceKubeSystem, constant.AppName)
@@ -346,6 +323,10 @@ func (c *checkCmd) waitForPodToSucceed(ctx context.Context) error {
 
 		if pod.Status.Phase == corev1.PodSucceeded {
 			log.Printf(logMsgPodSucceeded, namespaceKubeSystem, constant.AppName)
+
+			break
+		} else if pod.Status.Phase == corev1.PodFailed {
+			log.Printf(logMsgPodFailed, namespaceKubeSystem, constant.AppName)
 
 			break
 		}
@@ -395,38 +376,44 @@ func (c *checkCmd) streamPodLogs(ctx context.Context) error {
 }
 
 // cleanupResources cleans up the resources.
-func (c *checkCmd) cleanupResources(ctx context.Context, namespaceRoles []namespaceRole, serviceAccount *corev1.ServiceAccount) error {
+func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string, roleName string, serviceAccountName string, allowNotFound bool) error {
 	// logMsgResourcesCleanedUp is the message that is logged when the resources are cleaned up.
 	const logMsgResourcesCleanedUp = "resources cleaned up"
 
 	pod, err := c.clientsetPod.Get(ctx, constant.AppName, metav1.GetOptions{})
-	if err != nil {
+	if err != nil && (!allowNotFound && !apierrors.IsNotFound(err)) {
 		return multierr.Combine(errFailedToGetPod, err)
 	}
 
-	if err = c.clientsetPod.Delete(ctx, constant.AppName, metav1.DeleteOptions{}); err != nil {
+	if err = c.clientsetPod.Delete(ctx, constant.AppName, metav1.DeleteOptions{}); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
 		return multierr.Combine(errFailedToDeletePod, err)
 	}
 
-	roleBindingName := fmt.Sprintf("%s-rolebinding", constant.AppName)
-
-	for _, ns := range namespaceRoles {
-		if err = c.clientset.RbacV1().RoleBindings(ns.namespace).Delete(ctx, roleBindingName, metav1.DeleteOptions{}); err != nil {
+	for _, ns := range constRoleNamespaces {
+		if err = c.clientset.RbacV1().RoleBindings(ns).Delete(
+			ctx,
+			roleBindingName,
+			metav1.DeleteOptions{},
+		); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
 			return multierr.Combine(errFailedToDeleteRoleBinding, err)
 		}
 
-		if err = c.clientset.RbacV1().Roles(ns.namespace).Delete(ctx, ns.role.Name, metav1.DeleteOptions{}); err != nil {
+		if err = c.clientset.RbacV1().Roles(ns).Delete(
+			ctx,
+			roleName,
+			metav1.DeleteOptions{},
+		); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
 			return multierr.Combine(errFailedToDeleteRole, err)
 		}
 	}
 
-	if err = c.clientsetSA.Delete(ctx, serviceAccount.Name, metav1.DeleteOptions{}); err != nil {
+	if err = c.clientsetSA.Delete(ctx, serviceAccountName, metav1.DeleteOptions{}); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
 		return multierr.Combine(errFailedToDeleteServiceAccount, err)
 	}
 
 	log.Println(logMsgResourcesCleanedUp)
 
-	if pod.Status.Phase == corev1.PodFailed {
+	if pod != nil && !allowNotFound && pod.Status.Phase == corev1.PodFailed {
 		os.Exit(1)
 	}
 
@@ -473,58 +460,57 @@ func (c *checkCmd) Run(cobraCmd *cobra.Command, args []string) {
 
 	log.Printf(logMsgKubeLoadedConfig, path)
 
+	serviceAccountName := fmt.Sprintf("%s-sa", constant.AppName)
+
+	roleName := fmt.Sprintf("%s-role", constant.AppName)
+
+	roleBindingName := fmt.Sprintf("%s-rolebinding", constant.AppName)
+
+	ctx := context.Background()
+
 	if err = c.setupClientsets(); err != nil {
 		log.Fatalln(err)
 	}
 
+	if util.FlagBool(c.cobraCmd, flagCleanupOnly) {
+		if err = c.cleanupResources(ctx, roleBindingName, roleName, serviceAccountName, true); err != nil {
+			log.Fatalln(err)
+		}
+
+		return
+	}
+
 	log.Println(logMsgKubeClientsetCreated)
 
-	ctx := context.Background()
-
-	serviceAccount, err := c.createServiceAccount(ctx)
-	if err != nil {
+	if err = c.createServiceAccount(ctx, serviceAccountName); err != nil {
 		log.Fatalln(err)
 	}
 
-	err = c.ensureNamespace(ctx)
-	if err != nil {
+	if err = c.ensureNamespace(ctx); err != nil {
 		log.Fatalln(err)
 	}
 
-	roles, err := c.createRoles(ctx)
-	if err != nil {
+	if err = c.createRoles(ctx, roleName); err != nil {
 		log.Fatalln(err)
 	}
 
-	namespaceRoles := []namespaceRole{
-		{constant.NamespaceAlphaSense, roles.alphaSense},
-		{constant.NamespaceCrossplane, roles.crossplane},
-		{constant.NamespaceMySQL, roles.mySQL},
-		{constant.NamespacePlatform, roles.platform},
-	}
-
-	err = c.createRoleBindings(ctx, serviceAccount, namespaceRoles)
-	if err != nil {
+	if err = c.createRoleBindings(ctx, serviceAccountName, roleBindingName, roleName); err != nil {
 		log.Fatalln(err)
 	}
 
-	err = c.createPod(ctx, serviceAccount)
-	if err != nil {
+	if err = c.createPod(ctx, serviceAccountName); err != nil {
 		log.Fatalln(err)
 	}
 
-	err = c.waitForPodToSucceed(ctx)
-	if err != nil {
+	if err = c.waitForPodToSucceed(ctx); err != nil {
 		log.Fatalln(err)
 	}
 
-	err = c.streamPodLogs(ctx)
-	if err != nil {
+	if err = c.streamPodLogs(ctx); err != nil {
 		log.Fatalln(err)
 	}
 
-	err = c.cleanupResources(ctx, namespaceRoles, serviceAccount)
-	if err != nil {
+	if err = c.cleanupResources(ctx, roleBindingName, roleName, serviceAccountName, false); err != nil {
 		log.Fatalln(err)
 	}
 }
@@ -558,10 +544,8 @@ If you do not specify the Kubernetes configuration file, the command will use th
 	)
 
 	var (
-		// constDefaultDockerImage is the default image to use for the pod.
-		//
-		// Do not modify this variable, it is supposed to be constant.
-		constDefaultDockerImage = fmt.Sprintf("%s-pod:latest", constant.AppName)
+		// defaultDockerImage is the default image to use for the pod.
+		defaultDockerImage = fmt.Sprintf("%s-pod:latest", constant.AppName)
 	)
 
 	cobraCmd.Flags().String(
@@ -570,8 +554,10 @@ If you do not specify the Kubernetes configuration file, the command will use th
 		"path to the Kubernetes configuration file to use for the check (or KUBECONFIG environment variable)",
 	)
 
+	cobraCmd.Flags().Bool(flagCleanupOnly, false, "only clean up the resources and exit")
+
 	cobraCmd.Flags().String(flagDockerRepo, defaultDockerRepo, "the Docker repository to use for the Pod image")
-	cobraCmd.Flags().String(flagDockerImage, constDefaultDockerImage, "the Docker image to use for the Pod")
+	cobraCmd.Flags().String(flagDockerImage, defaultDockerImage, "the Docker image to use for the Pod")
 	cobraCmd.Flags().String(flagImagePullSecret, constant.EmptyString, "the name of the image pull secret to use for the Pod")
 
 	return cobraCmd
