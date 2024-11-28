@@ -6,9 +6,9 @@ tasks:
       - git config core.hooksPath .githooks
 
   ci:
-    deps:
-      - ci-lint
-      - ci-test
+    cmds:
+      - task ci-lint
+      - task ci-test
   
   ci-lint:
     cmds:
