@@ -74,7 +74,7 @@ func (c *SMTPChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, errPortNotSet
 	}
 
-	return []any{}, nil
+	return nil, nil
 }
 
 // New is a function that returns a new SMTP checker.

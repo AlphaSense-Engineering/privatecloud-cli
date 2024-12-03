@@ -12,7 +12,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// LogMsgJWTsChecked is the message that is logged when the JWTs are checked.
+const LogMsgJWTsChecked = "checked JWTs"
+
 var (
+	// ErrFailedToCheckJWTs is the error that occurs when the JWTs are not checked.
+	ErrFailedToCheckJWTs = errors.New("failed to check JWTs")
+
 	// errJWTNotValid is an error that occurs when the JWT is not valid.
 	errJWTNotValid = errors.New("jwt is not valid")
 )

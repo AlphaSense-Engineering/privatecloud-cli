@@ -26,12 +26,12 @@ type UnsupportedCloudError struct {
 	cloud Cloud
 }
 
+var _ error = &UnsupportedCloudError{}
+
 // Error is a function that returns the error message.
 func (e *UnsupportedCloudError) Error() string {
 	return fmt.Sprintf("unsupported cloud type: %s", e.cloud)
 }
-
-var _ error = &UnsupportedCloudError{}
 
 // NewUnsupportedCloudError is a function that returns a new unsupported cloud error.
 func NewUnsupportedCloudError(cloud Cloud) error {

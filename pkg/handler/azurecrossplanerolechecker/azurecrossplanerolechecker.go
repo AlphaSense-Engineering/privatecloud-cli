@@ -11,6 +11,7 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/crossplanerolechecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization"
 )
@@ -21,9 +22,6 @@ var (
 
 	// errDuplicatePermission is the error that the permission is duplicated.
 	errDuplicatePermission = errors.New("duplicate permission")
-
-	// errIncorrectPermissions is the error that the permissions are incorrect.
-	errIncorrectPermissions = errors.New("incorrect permissions")
 )
 
 // constExpectedRolePermissions are the expected permissions for the Crossplane role in Azure.
@@ -97,6 +95,8 @@ var _ handler.Handler = &AzureCrossplaneRoleChecker{}
 //
 // The arguments are not used.
 // It returns nothing on success, or an error on failure.
+//
+// nolint:funlen
 func (c *AzureCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	scope := fmt.Sprintf("subscriptions/%s/resourceGroups/%s", c.envConfig.Spec.CloudSpec.Azure.SubscriptionID, c.envConfig.Spec.CloudSpec.Azure.ResourceGroup)
 
@@ -133,6 +133,8 @@ func (c *AzureCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]an
 
 	foundPermissions := make(map[string]struct{})
 
+	missingPermissions := []string{}
+
 	for _, permission := range roleDef.Properties.Permissions {
 		if permission.Actions == nil {
 			continue
@@ -152,10 +154,14 @@ func (c *AzureCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]an
 			continue
 		}
 
-		return nil, errIncorrectPermissions
+		missingPermissions = append(missingPermissions, k)
 	}
 
-	return []any{}, nil
+	if len(missingPermissions) > 0 {
+		return nil, crossplanerolechecker.NewRoleMissingPermissionsError(missingPermissions)
+	}
+
+	return nil, nil
 }
 
 // New is the function that creates a new AWS Crossplane role checker.

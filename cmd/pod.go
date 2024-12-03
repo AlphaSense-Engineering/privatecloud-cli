@@ -106,25 +106,14 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 
 	vcloud := cloud.Cloud(envConfig.Spec.CloudSpec.Provider)
 
-	const (
-		// serviceAccountNameAWS is the name of the service account for AWS.
-		serviceAccountNameAWS = "aws-privatecloud-installer"
-
-		// serviceAccountNameAzure is the name of the service account for Azure.
-		serviceAccountNameAzure = "azure-provider-sa"
-
-		// serviceAccountNameGCP is the name of the service account for GCP.
-		serviceAccountNameGCP = "gcp-provider-sa"
-	)
-
 	var serviceAccountName string
 
 	if vcloud == cloud.AWS {
-		serviceAccountName = serviceAccountNameAWS
+		serviceAccountName = constant.ServiceAccountNameAWS
 	} else if vcloud == cloud.Azure {
-		serviceAccountName = serviceAccountNameAzure
+		serviceAccountName = constant.ServiceAccountNameAzure
 	} else if vcloud == cloud.GCP {
-		serviceAccountName = serviceAccountNameGCP
+		serviceAccountName = constant.ServiceAccountNameGCP
 	} else {
 		log.Fatalln(cloud.NewUnsupportedCloudError(vcloud))
 	}

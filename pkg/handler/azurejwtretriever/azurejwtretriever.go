@@ -27,16 +27,13 @@ var _ handler.Handler = &AzureJWTRetriever{}
 // It returns a slice of JWTs on success, or an error on failure.
 func (c *AzureJWTRetriever) Handle(ctx context.Context, _ ...any) (jwts []any, err error) {
 	const (
-		// serviceAccountName is the name of the service account for Azure.
-		serviceAccountName = "azure-provider-sa"
-
 		// audience is the audience of the Azure JWTs.
 		audience = "api://AzureADTokenExchange"
 	)
 
 	clientsetSA := c.clientset.CoreV1().ServiceAccounts(constant.NamespaceCrossplane)
 
-	req, err := clientsetSA.CreateToken(ctx, serviceAccountName, &authenticationv1.TokenRequest{
+	req, err := clientsetSA.CreateToken(ctx, constant.ServiceAccountNameAzure, &authenticationv1.TokenRequest{
 		Spec: authenticationv1.TokenRequestSpec{
 			Audiences:         []string{audience},
 			ExpirationSeconds: util.Ref(jwtretriever.TokenExpirationSeconds),

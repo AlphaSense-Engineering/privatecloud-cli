@@ -39,7 +39,7 @@ func (c *TLSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, err
 	}
 
-	return []any{}, nil
+	return nil, nil
 }
 
 // New is a function that returns a new TLS checker.

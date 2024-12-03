@@ -12,6 +12,7 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/awschecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/azurechecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/cloudchecker"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/gcpchecker"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -48,6 +49,8 @@ func New(
 		return awschecker.New(envConfig, clientset, httpClient, jwksURI), nil
 	} else if vcloud == cloud.Azure {
 		return azurechecker.New(envConfig, clientset, httpClient, jwksURI), nil
+	} else if vcloud == cloud.GCP {
+		return gcpchecker.New(envConfig, clientset), nil
 	}
 
 	return nil, cloud.NewUnsupportedCloudError(vcloud)

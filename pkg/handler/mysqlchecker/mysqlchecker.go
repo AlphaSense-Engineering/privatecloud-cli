@@ -102,7 +102,7 @@ func (c *MySQLChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		}
 	}
 
-	return []any{}, nil
+	return nil, nil
 }
 
 // New is a function that returns a new MySQL checker.

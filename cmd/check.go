@@ -2,7 +2,6 @@
 package cmd
 
 import (
-	"bufio"
 	"context"
 	"encoding/base64"
 	"errors"
@@ -10,7 +9,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
@@ -29,9 +27,6 @@ import (
 )
 
 var (
-	// errFailedToGetPod is the error that is returned when the pod cannot be retrieved.
-	errFailedToGetPod = errors.New("failed to get Pod")
-
 	// errFailedToCreateServiceAccount is the error that is returned when the service account cannot be created.
 	errFailedToCreateServiceAccount = errors.New("failed to create ServiceAccount")
 
@@ -49,12 +44,6 @@ var (
 
 	// errFailedToCreatePod is the error that is returned when the pod cannot be created.
 	errFailedToCreatePod = errors.New("failed to create Pod")
-
-	// errFailedToGetPodLogStream is the error that is returned when the pod log stream cannot be retrieved.
-	errFailedToGetPodLogStream = errors.New("failed to get Pod log stream")
-
-	// errFailedToReadPodLogStream is the error that is returned when the pod log stream cannot be read.
-	errFailedToReadPodLogStream = errors.New("failed to read Pod log stream")
 
 	// errFailedToDeletePod is the error that is returned when the pod cannot be deleted.
 	errFailedToDeletePod = errors.New("failed to delete Pod")
@@ -187,6 +176,8 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"secrets"}, Verbs: []string{rbacv1.VerbAll}},
 		}},
 		{constant.NamespaceCrossplane, []rbacv1.PolicyRule{
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{"pods"}, Verbs: []string{rbacv1.VerbAll}},
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{"pods/log"}, Verbs: []string{rbacv1.VerbAll}},
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"serviceaccounts"}, Verbs: []string{rbacv1.VerbAll}},
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"serviceaccounts/token"}, Verbs: []string{rbacv1.VerbAll}},
 		}},
@@ -250,9 +241,6 @@ func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccountName st
 
 // createPod creates the pod.
 func (c *checkCmd) createPod(ctx context.Context, serviceAccountName string) error {
-	// logMsgPodCreated is the message that is logged when the pod is created.
-	const logMsgPodCreated = "created %s/%s Pod"
-
 	envConfigBytes, err := yaml.Marshal(c.envConfig)
 	if err != nil {
 		return multierr.Combine(errFailedToMarshalEnvConfig, err)
@@ -295,80 +283,21 @@ func (c *checkCmd) createPod(ctx context.Context, serviceAccountName string) err
 		return multierr.Combine(errFailedToCreatePod, err)
 	}
 
-	log.Printf(logMsgPodCreated, namespaceKubeSystem, constant.AppName)
+	log.Printf(constant.LogMsgPodCreated, namespaceKubeSystem, constant.AppName)
 
 	return nil
 }
 
-// waitForPodToSucceed waits for the pod to run.
-func (c *checkCmd) waitForPodToSucceed(ctx context.Context) error {
-	const (
-		// logMsgPodWaitingToSucceed is the message that is logged when the pod is waiting to succeed.
-		logMsgPodWaitingToSucceed = "waiting for %s/%s Pod to succeed..."
-
-		// logMsgPodSucceeded is the message that is logged when the pod succeeded.
-		logMsgPodSucceeded = "%s/%s Pod succeeded"
-
-		// logMsgPodFailed is the message that is logged when the pod failed.
-		logMsgPodFailed = "%s/%s Pod failed"
-	)
-
-	log.Printf(logMsgPodWaitingToSucceed, namespaceKubeSystem, constant.AppName)
-
-	for {
-		pod, err := c.clientsetPod.Get(ctx, constant.AppName, metav1.GetOptions{})
-		if err != nil {
-			return multierr.Combine(errFailedToGetPod, err)
-		}
-
-		if pod.Status.Phase == corev1.PodSucceeded {
-			log.Printf(logMsgPodSucceeded, namespaceKubeSystem, constant.AppName)
-
-			break
-		} else if pod.Status.Phase == corev1.PodFailed {
-			log.Printf(logMsgPodFailed, namespaceKubeSystem, constant.AppName)
-
-			break
-		}
-
-		time.Sleep(time.Second)
-	}
-
-	return nil
-}
-
-// streamPodLogs streams the pod logs.
-func (c *checkCmd) streamPodLogs(ctx context.Context) error {
-	// logMsgPodLogStreamRetrieved is the message that is logged when the pod log stream is retrieved.
-	const logMsgPodLogStreamRetrieved = "retrieved log stream for %s/%s Pod, printing..."
-
-	req := c.clientsetPod.GetLogs(constant.AppName, &corev1.PodLogOptions{})
-
-	podLogStream, err := req.Stream(ctx)
+// printPodLogs prints the pod logs.
+func (c *checkCmd) printPodLogs(ctx context.Context) error {
+	logs, err := kubeutil.PodLogs(ctx, c.clientset, namespaceKubeSystem, constant.AppName)
 	if err != nil {
-		return multierr.Combine(errFailedToGetPodLogStream, err)
+		return err
 	}
-	defer podLogStream.Close() // nolint:errcheck
-
-	log.Printf(logMsgPodLogStreamRetrieved, namespaceKubeSystem, constant.AppName)
 
 	log.SetFlags(0)
 
-	scanner := bufio.NewScanner(podLogStream)
-
-	for scanner.Scan() {
-		trimmedLine := strings.TrimSpace(scanner.Text())
-
-		if trimmedLine == constant.EmptyString {
-			continue
-		}
-
-		log.Println(trimmedLine)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return multierr.Combine(errFailedToReadPodLogStream, err)
-	}
+	log.Println(strings.Join(logs, "\n"))
 
 	log.SetFlags(constant.LogFlags)
 
@@ -376,18 +305,30 @@ func (c *checkCmd) streamPodLogs(ctx context.Context) error {
 }
 
 // cleanupResources cleans up the resources.
+//
+// nolint:funlen
 func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string, roleName string, serviceAccountName string, allowNotFound bool) error {
-	// logMsgResourcesCleanedUp is the message that is logged when the resources are cleaned up.
-	const logMsgResourcesCleanedUp = "resources cleaned up"
+	const (
+		// logMsgRoleBindingDeleted is the message that is logged when the role binding is deleted.
+		logMsgRoleBindingDeleted = "deleted %s/%s RoleBinding"
+
+		// logMsgRoleDeleted is the message that is logged when the role is deleted.
+		logMsgRoleDeleted = "deleted %s/%s Role"
+
+		// logMsgServiceAccountDeleted is the message that is logged when the service account is deleted.
+		logMsgServiceAccountDeleted = "deleted %s/%s ServiceAccount"
+	)
 
 	pod, err := c.clientsetPod.Get(ctx, constant.AppName, metav1.GetOptions{})
 	if err != nil && (!allowNotFound && !apierrors.IsNotFound(err)) {
-		return multierr.Combine(errFailedToGetPod, err)
+		return multierr.Combine(kubeutil.ErrFailedToGetPod, err)
 	}
 
 	if err = c.clientsetPod.Delete(ctx, constant.AppName, metav1.DeleteOptions{}); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
 		return multierr.Combine(errFailedToDeletePod, err)
 	}
+
+	log.Printf(constant.LogMsgPodDeleted, namespaceKubeSystem, constant.AppName)
 
 	for _, ns := range constRoleNamespaces {
 		if err = c.clientset.RbacV1().RoleBindings(ns).Delete(
@@ -398,6 +339,8 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 			return multierr.Combine(errFailedToDeleteRoleBinding, err)
 		}
 
+		log.Printf(logMsgRoleBindingDeleted, ns, roleBindingName)
+
 		if err = c.clientset.RbacV1().Roles(ns).Delete(
 			ctx,
 			roleName,
@@ -405,13 +348,15 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 		); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
 			return multierr.Combine(errFailedToDeleteRole, err)
 		}
+
+		log.Printf(logMsgRoleDeleted, ns, roleName)
 	}
 
 	if err = c.clientsetSA.Delete(ctx, serviceAccountName, metav1.DeleteOptions{}); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
 		return multierr.Combine(errFailedToDeleteServiceAccount, err)
 	}
 
-	log.Println(logMsgResourcesCleanedUp)
+	log.Printf(logMsgServiceAccountDeleted, namespaceKubeSystem, serviceAccountName)
 
 	if pod != nil && !allowNotFound && pod.Status.Phase == corev1.PodFailed {
 		os.Exit(1)
@@ -502,11 +447,12 @@ func (c *checkCmd) Run(cobraCmd *cobra.Command, args []string) {
 		log.Fatalln(err)
 	}
 
-	if err = c.waitForPodToSucceed(ctx); err != nil {
+	_, err = kubeutil.WaitForPodToSucceedOrFail(ctx, c.clientset, namespaceKubeSystem, constant.AppName)
+	if err != nil {
 		log.Fatalln(err)
 	}
 
-	if err = c.streamPodLogs(ctx); err != nil {
+	if err = c.printPodLogs(ctx); err != nil {
 		log.Fatalln(err)
 	}
 

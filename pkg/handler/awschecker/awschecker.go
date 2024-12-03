@@ -12,8 +12,9 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/awscrossplanerolechecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/awsjwtretriever"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/cloudchecker"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/crossplanerolechecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/jwtchecker"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/jwtretriever"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -58,16 +59,16 @@ func (c *AWSChecker) setup() {
 func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	jwts, err := util.ConvertSliceErr[any, *string](c.jwtRetriever.Handle(ctx))
 	if err != nil {
-		return nil, multierr.Combine(cloudchecker.ErrFailedToRetrieveJWTs, err)
+		return nil, multierr.Combine(jwtretriever.ErrFailedToRetrieveJWTs, err)
 	}
 
-	log.Println(cloudchecker.LogMsgJWTsRetrieved)
+	log.Println(jwtretriever.LogMsgJWTsRetrieved)
 
 	if _, err := c.jwtChecker.Handle(ctx, jwts); err != nil {
-		return nil, multierr.Combine(cloudchecker.ErrFailedToCheckJWTs, err)
+		return nil, multierr.Combine(jwtchecker.ErrFailedToCheckJWTs, err)
 	}
 
-	log.Println(cloudchecker.LogMsgJWTsChecked)
+	log.Println(jwtchecker.LogMsgJWTsChecked)
 
 	region := c.envConfig.Spec.CloudSpec.CloudZone
 
@@ -108,12 +109,12 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	}
 
 	if err != nil {
-		return nil, multierr.Combine(cloudchecker.ErrFailedToCheckCrossplaneRole, err)
+		return nil, multierr.Combine(crossplanerolechecker.ErrFailedToCheckCrossplaneRole, err)
 	}
 
-	log.Println(cloudchecker.LogMsgCrossplaneRoleChecked)
+	log.Println(crossplanerolechecker.LogMsgCrossplaneRoleChecked)
 
-	return []any{}, nil
+	return nil, nil
 }
 
 // New is the function that creates a new AWS checker.

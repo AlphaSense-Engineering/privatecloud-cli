@@ -20,28 +20,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const (
-	// LogMsgJWTsRetrieved is the message that is logged when the JWTs are retrieved.
-	LogMsgJWTsRetrieved = "retrieved JWTs"
-
-	// LogMsgJWTsChecked is the message that is logged when the JWTs are checked.
-	LogMsgJWTsChecked = "checked JWTs"
-
-	// LogMsgCrossplaneRoleChecked is the message that is logged when the Crossplane role is checked.
-	LogMsgCrossplaneRoleChecked = "checked Crossplane role"
-)
-
-var (
-	// ErrFailedToRetrieveJWTs is the error that occurs when the JWTs are not retrieved.
-	ErrFailedToRetrieveJWTs = errors.New("failed to retrieve JWTs")
-
-	// ErrFailedToCheckJWTs is the error that occurs when the JWTs are not checked.
-	ErrFailedToCheckJWTs = errors.New("failed to check JWTs")
-
-	// ErrFailedToCheckCrossplaneRole is the error that occurs when the Crossplane role is not checked.
-	ErrFailedToCheckCrossplaneRole = errors.New("failed to check Crossplane role")
-)
-
 var (
 	// errFailedToCheckMySQL is the error that occurs when the MySQL is not checked.
 	errFailedToCheckMySQL = errors.New("failed to check MySQL")

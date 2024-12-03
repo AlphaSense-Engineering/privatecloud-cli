@@ -46,7 +46,7 @@ func (c *SSOChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, errSAMLEntityIDNotSet
 	}
 
-	return []any{}, nil
+	return nil, nil
 }
 
 // New is a function that returns a new SSO checker.
