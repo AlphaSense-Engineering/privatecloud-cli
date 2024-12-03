@@ -12,13 +12,24 @@ trap stash_pop INT TERM
 
 git stash push -k -m "pre-lint-stash"
 
-npx commitlint --last --verbose
+run() {
+  set +e
+  $1
+  local EXIT_CODE=$?
+  set -e
 
-npx commitlint --from origin/main --to HEAD --verbose
+  if [ "$EXIT_CODE" -gt 0 ]; then
+    stash_pop
+    exit "$EXIT_CODE"
+  fi
+}
 
-go mod tidy
+run "npx commitlint --last --verbose"
+run "npx commitlint --from origin/main --to HEAD --verbose"
 
-golangci-lint run --out-format sarif --timeout 10m
+run "go mod tidy"
+
+run "golangci-lint run --out-format sarif --timeout 10m"
 
 set +e
 markdownlint-cli2 **/*.md
@@ -29,10 +40,11 @@ cat markdownlint-cli2-sarif.sarif
 rm -f markdownlint-cli2-sarif.sarif
 
 if [ "$MARKDOWNLINT_EXIT_CODE" -gt 0 ]; then
+  stash_pop
   exit "$MARKDOWNLINT_EXIT_CODE"
 fi
 
-yamllint -f parsable .
+run "yamllint -f parsable ."
 
 if [ -n "${GITHUB_ACTIONS:-}" ] && [ -n "$(git status --porcelain)" ]; then
   exit 1
