@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	"github.com/stretchr/testify/assert"
@@ -51,9 +52,6 @@ func TestOIDCChecker_Handle(t *testing.T) {
 
 		// emptyJSONBodyString is an empty JSON body string.
 		emptyJSONBodyString = `{}`
-
-		// emptyStringBodyString is an empty string body string.
-		emptyStringBodyString = ""
 
 		// irrelevant is an irrelevant value.
 		irrelevant = "irrelevant"
@@ -123,7 +121,7 @@ func TestOIDCChecker_Handle(t *testing.T) {
 			oidcURL:    validAWSURL,
 			cloud:      cloud.AWS,
 			statusCode: http.StatusOK,
-			bodyString: emptyStringBodyString,
+			bodyString: constant.EmptyString,
 			wantErr:    io.EOF,
 		},
 		{
@@ -131,7 +129,7 @@ func TestOIDCChecker_Handle(t *testing.T) {
 			oidcURL:    validAzureURL,
 			cloud:      cloud.Azure,
 			statusCode: http.StatusOK,
-			bodyString: emptyStringBodyString,
+			bodyString: constant.EmptyString,
 			wantErr:    io.EOF,
 		},
 		{
