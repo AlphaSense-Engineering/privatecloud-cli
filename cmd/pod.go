@@ -30,6 +30,9 @@ var (
 	// errFailedToDecodeEnvConfig is the error that is returned when the envconfig data from the flag cannot be decoded.
 	errFailedToDecodeEnvConfig = errors.New("failed to decode envconfig")
 
+	// errFailedToEnsureNamespace is the error that is returned when the namespace cannot be ensured.
+	errFailedToEnsureNamespace = errors.New("failed to ensure Namespace")
+
 	// errFailedToEnsureServiceAccount is the error that is returned when the service account cannot be ensured.
 	errFailedToEnsureServiceAccount = errors.New("failed to ensure ServiceAccount")
 
@@ -55,6 +58,9 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 
 		// logMsgEnvConfigDecoded is the message that is logged when the environment configuration is decoded.
 		logMsgEnvConfigDecoded = "decoded environment configuration"
+
+		// logMsgNamespaceEnsured is the message that is logged when the namespace is ensured.
+		logMsgNamespaceEnsured = "ensured %s Namespace"
 
 		// logMsgServiceAccountEnsured is the message that is logged when the service account is ensured.
 		logMsgServiceAccountEnsured = "ensured %s/%s ServiceAccount"
@@ -106,6 +112,18 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 
 	vcloud := cloud.Cloud(envConfig.Spec.CloudSpec.Provider)
 
+	ctx := context.Background()
+
+	if _, err := clientset.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: constant.NamespaceCrossplane,
+		},
+	}, metav1.CreateOptions{}); err != nil && !apierrors.IsAlreadyExists(err) {
+		log.Fatalln(multierr.Combine(errFailedToEnsureNamespace, err))
+	}
+
+	log.Printf(logMsgNamespaceEnsured, constant.NamespaceCrossplane)
+
 	var serviceAccountName string
 
 	if vcloud == cloud.AWS {
@@ -130,8 +148,6 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 			"iam.gke.io/gcp-service-account": gcpcloudutil.ServiceAccountAnnotation(envConfig.Spec.ClusterName, envConfig.Spec.CloudSpec.GCP.ProjectID),
 		}
 	}
-
-	ctx := context.Background()
 
 	if _, err = clientset.CoreV1().ServiceAccounts(constant.NamespaceCrossplane).Create(
 		ctx, sa, metav1.CreateOptions{},

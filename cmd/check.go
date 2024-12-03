@@ -30,14 +30,17 @@ var (
 	// errFailedToCreateServiceAccount is the error that is returned when the service account cannot be created.
 	errFailedToCreateServiceAccount = errors.New("failed to create ServiceAccount")
 
-	// errFailedToEnsureNamespace is the error that is returned when the namespace cannot be ensured.
-	errFailedToEnsureNamespace = errors.New("failed to ensure Namespace")
-
 	// errFailedToCreateRole is the error that is returned when the role cannot be created.
 	errFailedToCreateRole = errors.New("failed to create Role")
 
+	// errFailedToCreateClusterRole is the error that is returned when the cluster role cannot be created.
+	errFailedToCreateClusterRole = errors.New("failed to create ClusterRole")
+
 	// errFailedToCreateRoleBinding is the error that is returned when the role binding cannot be created.
 	errFailedToCreateRoleBinding = errors.New("failed to create RoleBinding")
+
+	// errFailedToCreateClusterRoleBinding is the error that is returned when the cluster role binding cannot be created.
+	errFailedToCreateClusterRoleBinding = errors.New("failed to create ClusterRoleBinding")
 
 	// errFailedToMarshalEnvConfig is the error that is returned when the environment configuration cannot be marshaled.
 	errFailedToMarshalEnvConfig = errors.New("failed to marshal environment configuration")
@@ -73,8 +76,8 @@ const (
 	flagImagePullSecret = "image-pull-secret" // nolint:gosec
 )
 
-// namespaceKubeSystem is the namespace for the Kubernetes system.
-const namespaceKubeSystem = "kube-system"
+// namespaceDefault is the default namespace.
+const namespaceDefault = "default"
 
 // constRoleNamespaces is the list of namespaces for the roles.
 //
@@ -115,11 +118,11 @@ func (c *checkCmd) setupClientsets() (err error) {
 		return multierr.Combine(errFailedToCreateKubernetesClientset, err)
 	}
 
-	c.clientsetSA = c.clientset.CoreV1().ServiceAccounts(namespaceKubeSystem)
+	c.clientsetSA = c.clientset.CoreV1().ServiceAccounts(namespaceDefault)
 
 	c.clientsetNamespace = c.clientset.CoreV1().Namespaces()
 
-	c.clientsetPod = c.clientset.CoreV1().Pods(namespaceKubeSystem)
+	c.clientsetPod = c.clientset.CoreV1().Pods(namespaceDefault)
 
 	return
 }
@@ -132,7 +135,7 @@ func (c *checkCmd) createServiceAccount(ctx context.Context, serviceAccountName 
 	serviceAccount := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      serviceAccountName,
-			Namespace: namespaceKubeSystem,
+			Namespace: namespaceDefault,
 		},
 	}
 
@@ -140,33 +143,22 @@ func (c *checkCmd) createServiceAccount(ctx context.Context, serviceAccountName 
 		return multierr.Combine(errFailedToCreateServiceAccount, err)
 	}
 
-	log.Printf(logMsgServiceAccountCreated, namespaceKubeSystem, serviceAccount.Name)
-
-	return nil
-}
-
-// ensureNamespace ensures the namespace.
-func (c *checkCmd) ensureNamespace(ctx context.Context) error {
-	// logMsgNamespaceEnsured is the message that is logged when the namespace is ensured.
-	const logMsgNamespaceEnsured = "ensured %s Namespace"
-
-	if _, err := c.clientsetNamespace.Create(ctx, &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: constant.NamespaceCrossplane,
-		},
-	}, metav1.CreateOptions{}); err != nil && !apierrors.IsAlreadyExists(err) {
-		return multierr.Combine(errFailedToEnsureNamespace, err)
-	}
-
-	log.Printf(logMsgNamespaceEnsured, constant.NamespaceCrossplane)
+	log.Printf(logMsgServiceAccountCreated, namespaceDefault, serviceAccount.Name)
 
 	return nil
 }
 
 // createRoles creates the roles.
+//
+// nolint:funlen
 func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
-	// logMsgRoleCreated is the message that is logged when the role is created.
-	const logMsgRoleCreated = "created %s/%s Role"
+	const (
+		// logMsgRoleCreated is the message that is logged when the role is created.
+		logMsgRoleCreated = "created %s/%s Role"
+
+		// logMsgClusterRoleCreated is the message that is logged when the cluster role is created.
+		logMsgClusterRoleCreated = "created %s ClusterRole"
+	)
 
 	namespacePolicyRules := []struct {
 		namespace string
@@ -178,6 +170,8 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 		{constant.NamespaceCrossplane, []rbacv1.PolicyRule{
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"pods"}, Verbs: []string{rbacv1.VerbAll}},
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"pods/log"}, Verbs: []string{rbacv1.VerbAll}},
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{"pods"}, Verbs: []string{rbacv1.VerbAll}},
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{"pods/log"}, Verbs: []string{rbacv1.VerbAll}},
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"serviceaccounts"}, Verbs: []string{rbacv1.VerbAll}},
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"serviceaccounts/token"}, Verbs: []string{rbacv1.VerbAll}},
 		}},
@@ -187,6 +181,10 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 		{constant.NamespacePlatform, []rbacv1.PolicyRule{
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"secrets"}, Verbs: []string{rbacv1.VerbAll}}},
 		},
+	}
+
+	clusterPolicyRules := []rbacv1.PolicyRule{
+		{APIGroups: []string{constant.EmptyString}, Resources: []string{"namespaces"}, Verbs: []string{rbacv1.VerbAll}},
 	}
 
 	for _, pair := range namespacePolicyRules {
@@ -205,13 +203,40 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 		log.Printf(logMsgRoleCreated, pair.namespace, role.Name)
 	}
 
+	clusterRole := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: roleName,
+		},
+		Rules: clusterPolicyRules,
+	}
+
+	if _, err := c.clientset.RbacV1().ClusterRoles().Create(ctx, clusterRole, metav1.CreateOptions{}); err != nil {
+		return multierr.Combine(errFailedToCreateClusterRole, err)
+	}
+
+	log.Printf(logMsgClusterRoleCreated, clusterRole.Name)
+
 	return nil
 }
 
 // createRoleBindings creates the role bindings.
 func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccountName string, roleBindingName string, roleName string) error {
-	// logMsgRoleBindingCreated is the message that is logged when the role binding is created.
-	const logMsgRoleBindingCreated = "created %s/%s RoleBinding"
+	const (
+		// logMsgRoleBindingCreated is the message that is logged when the role binding is created.
+		logMsgRoleBindingCreated = "created %s/%s RoleBinding"
+
+		// logMsgClusterRoleBindingCreated is the message that is logged when the cluster role binding is created.
+		logMsgClusterRoleBindingCreated = "created %s ClusterRoleBinding"
+	)
+
+	// constSubjects is the subjects for the role bindings.
+	//
+	// Do not modify this variable, it is supposed to be constant.
+	constSubjects := []rbacv1.Subject{{
+		Kind:      rbacv1.ServiceAccountKind,
+		Name:      serviceAccountName,
+		Namespace: namespaceDefault,
+	}}
 
 	for _, ns := range constRoleNamespaces {
 		if _, err := c.clientset.RbacV1().RoleBindings(ns).Create(ctx, &rbacv1.RoleBinding{
@@ -219,11 +244,7 @@ func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccountName st
 				Name:      roleBindingName,
 				Namespace: ns,
 			},
-			Subjects: []rbacv1.Subject{{
-				Kind:      rbacv1.ServiceAccountKind,
-				Name:      serviceAccountName,
-				Namespace: namespaceKubeSystem,
-			}},
+			Subjects: constSubjects,
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
 				Kind:     "Role",
@@ -235,6 +256,22 @@ func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccountName st
 
 		log.Printf(logMsgRoleBindingCreated, ns, roleBindingName)
 	}
+
+	if _, err := c.clientset.RbacV1().ClusterRoleBindings().Create(ctx, &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: roleBindingName,
+		},
+		Subjects: constSubjects,
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "ClusterRole",
+			Name:     roleName,
+		},
+	}, metav1.CreateOptions{}); err != nil {
+		return multierr.Combine(errFailedToCreateClusterRoleBinding, err)
+	}
+
+	log.Printf(logMsgClusterRoleBindingCreated, roleBindingName)
 
 	return nil
 }
@@ -283,14 +320,14 @@ func (c *checkCmd) createPod(ctx context.Context, serviceAccountName string) err
 		return multierr.Combine(errFailedToCreatePod, err)
 	}
 
-	log.Printf(constant.LogMsgPodCreated, namespaceKubeSystem, constant.AppName)
+	log.Printf(constant.LogMsgPodCreated, namespaceDefault, constant.AppName)
 
 	return nil
 }
 
 // printPodLogs prints the pod logs.
 func (c *checkCmd) printPodLogs(ctx context.Context) error {
-	logs, err := kubeutil.PodLogs(ctx, c.clientset, namespaceKubeSystem, constant.AppName)
+	logs, err := kubeutil.PodLogs(ctx, c.clientset, namespaceDefault, constant.AppName)
 	if err != nil {
 		return err
 	}
@@ -309,6 +346,12 @@ func (c *checkCmd) printPodLogs(ctx context.Context) error {
 // nolint:funlen
 func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string, roleName string, serviceAccountName string, allowNotFound bool) error {
 	const (
+		// logMsgClusterRoleBindingDeleted is the message that is logged when the cluster role binding is deleted.
+		logMsgClusterRoleBindingDeleted = "deleted %s ClusterRoleBinding"
+
+		// logMsgClusterRoleDeleted is the message that is logged when the cluster role is deleted.
+		logMsgClusterRoleDeleted = "deleted %s ClusterRole"
+
 		// logMsgRoleBindingDeleted is the message that is logged when the role binding is deleted.
 		logMsgRoleBindingDeleted = "deleted %s/%s RoleBinding"
 
@@ -328,7 +371,27 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 		return multierr.Combine(errFailedToDeletePod, err)
 	}
 
-	log.Printf(constant.LogMsgPodDeleted, namespaceKubeSystem, constant.AppName)
+	log.Printf(constant.LogMsgPodDeleted, namespaceDefault, constant.AppName)
+
+	if err = c.clientset.RbacV1().ClusterRoleBindings().Delete(
+		ctx,
+		roleBindingName,
+		metav1.DeleteOptions{},
+	); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
+		return multierr.Combine(errFailedToDeleteRoleBinding, err)
+	}
+
+	log.Printf(logMsgClusterRoleBindingDeleted, roleBindingName)
+
+	if err = c.clientset.RbacV1().ClusterRoles().Delete(
+		ctx,
+		roleName,
+		metav1.DeleteOptions{},
+	); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
+		return multierr.Combine(errFailedToDeleteRole, err)
+	}
+
+	log.Printf(logMsgClusterRoleDeleted, roleName)
 
 	for _, ns := range constRoleNamespaces {
 		if err = c.clientset.RbacV1().RoleBindings(ns).Delete(
@@ -356,7 +419,7 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 		return multierr.Combine(errFailedToDeleteServiceAccount, err)
 	}
 
-	log.Printf(logMsgServiceAccountDeleted, namespaceKubeSystem, serviceAccountName)
+	log.Printf(logMsgServiceAccountDeleted, namespaceDefault, serviceAccountName)
 
 	if pod != nil && !allowNotFound && pod.Status.Phase == corev1.PodFailed {
 		os.Exit(1)
@@ -431,10 +494,6 @@ func (c *checkCmd) Run(cobraCmd *cobra.Command, args []string) {
 		log.Fatalln(err)
 	}
 
-	if err = c.ensureNamespace(ctx); err != nil {
-		log.Fatalln(err)
-	}
-
 	if err = c.createRoles(ctx, roleName); err != nil {
 		log.Fatalln(err)
 	}
@@ -447,7 +506,7 @@ func (c *checkCmd) Run(cobraCmd *cobra.Command, args []string) {
 		log.Fatalln(err)
 	}
 
-	_, err = kubeutil.WaitForPodToSucceedOrFail(ctx, c.clientset, namespaceKubeSystem, constant.AppName)
+	_, err = kubeutil.WaitForPodToSucceedOrFail(ctx, c.clientset, namespaceDefault, constant.AppName)
 	if err != nil {
 		log.Fatalln(err)
 	}
