@@ -13,7 +13,11 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud/gcpcloudutil"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/infrachecker"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/awschecker"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/azurechecker"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/cloudchecker"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/gcpchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/k8s/kubeutil"
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
@@ -36,8 +40,8 @@ var (
 	// errFailedToEnsureServiceAccount is the error that is returned when the service account cannot be ensured.
 	errFailedToEnsureServiceAccount = errors.New("failed to ensure ServiceAccount")
 
-	// errFailedToCreateInfraChecker is the error that is returned when the infrastructure checker cannot be created.
-	errFailedToCreateInfraChecker = errors.New("failed to create infrastructure checker")
+	// errJWKSURIRequired is an error that occurs when the JWKS URI is required.
+	errJWKSURIRequired = errors.New("jwks URI is required")
 
 	// errFailedToCheckInfrastructure is the error that is returned when the infrastructure check fails.
 	errFailedToCheckInfrastructure = errors.New("failed to check infrastructure")
@@ -157,17 +161,38 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 
 	log.Printf(logMsgServiceAccountEnsured, constant.NamespaceCrossplane, serviceAccountName)
 
-	infraChecker, err := infrachecker.New(ctx, vcloud, envConfig, clientset, http.DefaultClient)
-	if err != nil {
-		log.Fatalln(multierr.Combine(errFailedToCreateInfraChecker, err))
+	httpClient := http.DefaultClient
 
-		return
+	cloudChecker := cloudchecker.New(vcloud, envConfig, clientset, httpClient)
+
+	var jwksURI *string
+
+	rawJWKSURI, err := cloudChecker.Handle(ctx)
+	if err != nil {
+		log.Fatalln(multierr.Combine(errFailedToCheckInfrastructure, err))
 	}
 
-	if _, err := infraChecker.Handle(ctx); err != nil {
-		log.Fatalln(multierr.Combine(errFailedToCheckInfrastructure, err))
+	if rawJWKSURI != nil {
+		jwksURI, _ = rawJWKSURI[0].(*string)
+	}
 
-		return
+	// In GCP, we don't need to check the OIDC URL as it's not used.
+	if vcloud != cloud.GCP && jwksURI == nil {
+		log.Fatalln(multierr.Combine(errFailedToCheckInfrastructure, errJWKSURIRequired))
+	}
+
+	var concreteCloudChecker handler.Handler
+
+	if vcloud == cloud.AWS {
+		concreteCloudChecker = awschecker.New(envConfig, clientset, httpClient, jwksURI)
+	} else if vcloud == cloud.Azure {
+		concreteCloudChecker = azurechecker.New(envConfig, clientset, httpClient, jwksURI)
+	} else if vcloud == cloud.GCP {
+		concreteCloudChecker = gcpchecker.New(envConfig, clientset)
+	}
+
+	if _, err := concreteCloudChecker.Handle(ctx); err != nil {
+		log.Fatalln(multierr.Combine(errFailedToCheckInfrastructure, err))
 	}
 
 	log.Println(logMsgInfraCheckCompletedSuccessfully)

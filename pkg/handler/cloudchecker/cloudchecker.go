@@ -11,6 +11,7 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/mysqlchecker"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/nodegroupchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/oidcchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/smtpchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/ssochecker"
@@ -58,6 +59,8 @@ type CloudChecker struct {
 	ssoChecker *ssochecker.SSOChecker
 	// oidcChecker is the OIDC checker.
 	oidcChecker *oidcchecker.OIDCChecker
+	// nodeGroupChecker is the node group checker.
+	nodeGroupChecker *nodegroupchecker.NodeGroupChecker
 }
 
 var _ handler.Handler = &CloudChecker{}
@@ -73,6 +76,8 @@ func (c *CloudChecker) setup() {
 	c.ssoChecker = ssochecker.New(c.clientset)
 
 	c.oidcChecker = oidcchecker.New(c.vcloud, c.envConfig, c.httpClient)
+
+	c.nodeGroupChecker = nodegroupchecker.New(c.clientset)
 }
 
 // Handle is the function that handles the infrastructure check.
@@ -133,6 +138,12 @@ func (c *CloudChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	}
 
 	log.Println(logMsgOIDCURLChecked)
+
+	if _, err := c.nodeGroupChecker.Handle(ctx); err != nil {
+		return nil, multierr.Combine(nodegroupchecker.ErrFailedToCheckNodeGroups, err)
+	}
+
+	log.Println(nodegroupchecker.LogMsgNodeGroupsChecked)
 
 	return []any{jwksURI}, nil
 }

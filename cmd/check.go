@@ -185,6 +185,7 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 
 	clusterPolicyRules := []rbacv1.PolicyRule{
 		{APIGroups: []string{constant.EmptyString}, Resources: []string{"namespaces"}, Verbs: []string{rbacv1.VerbAll}},
+		{APIGroups: []string{constant.EmptyString}, Resources: []string{"nodes"}, Verbs: []string{rbacv1.VerbAll}},
 	}
 
 	for _, pair := range namespacePolicyRules {
