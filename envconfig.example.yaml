@@ -13,4 +13,4 @@ spec:
   clusterName: cluster-name
   domainName: cluster-name.example.com
   installID: irrelevant
-  version: v1.6.3
+  version: v0.0.1
