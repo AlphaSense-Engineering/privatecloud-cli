@@ -3,7 +3,6 @@ package azurechecker
 
 import (
 	"context"
-	"log"
 	"net/http"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
@@ -16,12 +15,15 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization"
+	"github.com/charmbracelet/log"
 	"go.uber.org/multierr"
 	"k8s.io/client-go/kubernetes"
 )
 
 // AzureChecker is the type that contains the infrastructure check functions for Azure.
 type AzureChecker struct {
+	// logger is the logger.
+	logger *log.Logger
 	// envConfig is the environment configuration.
 	envConfig *envconfig.EnvConfig
 	// clientset is the Kubernetes client.
@@ -58,13 +60,13 @@ func (c *AzureChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, multierr.Combine(jwtretriever.ErrFailedToRetrieveJWTs, err)
 	}
 
-	log.Println(jwtretriever.LogMsgJWTsRetrieved)
+	c.logger.Log(log.InfoLevel, jwtretriever.LogMsgJWTsRetrieved)
 
 	if _, err := c.jwtChecker.Handle(ctx, jwts); err != nil {
 		return nil, multierr.Combine(jwtchecker.ErrFailedToCheckJWTs, err)
 	}
 
-	log.Println(jwtchecker.LogMsgJWTsChecked)
+	c.logger.Log(log.InfoLevel, jwtchecker.LogMsgJWTsChecked)
 
 	jwt := jwts[0]
 
@@ -99,14 +101,15 @@ func (c *AzureChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, multierr.Combine(crossplanerolechecker.ErrFailedToCheckCrossplaneRole, err)
 	}
 
-	log.Println(crossplanerolechecker.LogMsgCrossplaneRoleChecked)
+	c.logger.Log(log.InfoLevel, crossplanerolechecker.LogMsgCrossplaneRoleChecked)
 
 	return nil, nil
 }
 
 // New is the function that creates a new Azure checker.
-func New(envConfig *envconfig.EnvConfig, clientset kubernetes.Interface, httpClient *http.Client, jwksURI *string) *AzureChecker {
+func New(logger *log.Logger, envConfig *envconfig.EnvConfig, clientset kubernetes.Interface, httpClient *http.Client, jwksURI *string) *AzureChecker {
 	c := &AzureChecker{
+		logger:     logger,
 		envConfig:  envConfig,
 		clientset:  clientset,
 		httpClient: httpClient,

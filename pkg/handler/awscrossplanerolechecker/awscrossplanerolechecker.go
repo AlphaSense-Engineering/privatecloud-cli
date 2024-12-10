@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/url"
 	"strings"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
+	"github.com/charmbracelet/log"
 )
 
 var (
@@ -229,6 +229,8 @@ var (
 
 // AWSCrossplaneRoleChecker is the type that contains the check functions for AWS Crossplane role.
 type AWSCrossplaneRoleChecker struct {
+	// logger is the logger.
+	logger *log.Logger
 	// envConfig is the environment configuration.
 	envConfig *envconfig.EnvConfig
 	// iam is the AWS IAM client.
@@ -443,7 +445,7 @@ func (c *AWSCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 	const noteBeneMsg = "n.b. In AWS, the Crossplane role policy document is not being checked due to its structural aspects. " +
 		"Instead, only the boundary policy document is being checked."
 
-	log.Println(noteBeneMsg)
+	c.logger.Log(log.InfoLevel, noteBeneMsg)
 
 	roleName := awscloudutil.CrossplaneRoleName(c.envConfig.Spec.ClusterName)
 
@@ -481,8 +483,9 @@ func (c *AWSCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 }
 
 // New is the function that creates a new AWS Crossplane role checker.
-func New(envConfig *envconfig.EnvConfig, iam *iam.Client) *AWSCrossplaneRoleChecker {
+func New(logger *log.Logger, envConfig *envconfig.EnvConfig, iam *iam.Client) *AWSCrossplaneRoleChecker {
 	return &AWSCrossplaneRoleChecker{
+		logger:    logger,
 		envConfig: envConfig,
 		iam:       iam,
 	}

@@ -3,7 +3,6 @@ package awschecker
 
 import (
 	"context"
-	"log"
 	"net/http"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud/awscloudutil"
@@ -20,12 +19,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	"github.com/charmbracelet/log"
 	"go.uber.org/multierr"
 	"k8s.io/client-go/kubernetes"
 )
 
 // AWSChecker is the type that contains the infrastructure check functions for AWS.
 type AWSChecker struct {
+	// logger is the logger.
+	logger *log.Logger
 	// envConfig is the environment configuration.
 	envConfig *envconfig.EnvConfig
 	// clientset is the Kubernetes client.
@@ -62,13 +64,13 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, multierr.Combine(jwtretriever.ErrFailedToRetrieveJWTs, err)
 	}
 
-	log.Println(jwtretriever.LogMsgJWTsRetrieved)
+	c.logger.Log(log.InfoLevel, jwtretriever.LogMsgJWTsRetrieved)
 
 	if _, err := c.jwtChecker.Handle(ctx, jwts); err != nil {
 		return nil, multierr.Combine(jwtchecker.ErrFailedToCheckJWTs, err)
 	}
 
-	log.Println(jwtchecker.LogMsgJWTsChecked)
+	c.logger.Log(log.InfoLevel, jwtchecker.LogMsgJWTsChecked)
 
 	region := c.envConfig.Spec.CloudSpec.CloudZone
 
@@ -94,7 +96,7 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 			break
 		}
 
-		crossplaneRoleChecker := awscrossplanerolechecker.New(c.envConfig, iam.NewFromConfig(aws.Config{
+		crossplaneRoleChecker := awscrossplanerolechecker.New(c.logger, c.envConfig, iam.NewFromConfig(aws.Config{
 			Region: region,
 			Credentials: credentials.NewStaticCredentialsProvider(
 				*assumedRole.Credentials.AccessKeyId,
@@ -112,14 +114,15 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, multierr.Combine(crossplanerolechecker.ErrFailedToCheckCrossplaneRole, err)
 	}
 
-	log.Println(crossplanerolechecker.LogMsgCrossplaneRoleChecked)
+	c.logger.Log(log.InfoLevel, crossplanerolechecker.LogMsgCrossplaneRoleChecked)
 
 	return nil, nil
 }
 
 // New is the function that creates a new AWS checker.
-func New(envConfig *envconfig.EnvConfig, clientset kubernetes.Interface, httpClient *http.Client, jwksURI *string) *AWSChecker {
+func New(logger *log.Logger, envConfig *envconfig.EnvConfig, clientset kubernetes.Interface, httpClient *http.Client, jwksURI *string) *AWSChecker {
 	c := &AWSChecker{
+		logger:     logger,
 		envConfig:  envConfig,
 		clientset:  clientset,
 		httpClient: httpClient,

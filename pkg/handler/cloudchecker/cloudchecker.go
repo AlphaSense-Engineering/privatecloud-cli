@@ -4,7 +4,6 @@ package cloudchecker
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
@@ -17,6 +16,7 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/ssochecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/tlschecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
+	"github.com/charmbracelet/log"
 	"go.uber.org/multierr"
 	"k8s.io/client-go/kubernetes"
 )
@@ -40,6 +40,8 @@ var (
 
 // CloudChecker is the type that contains the infrastructure check functions for cloud.
 type CloudChecker struct {
+	// logger is the logger.
+	logger *log.Logger
 	// vcloud is the cloud provider.
 	vcloud cloud.Cloud
 	// envConfig is the environment configuration.
@@ -108,25 +110,25 @@ func (c *CloudChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, multierr.Combine(errFailedToCheckMySQL, err)
 	}
 
-	log.Println(logMsgMySQLChecked)
+	c.logger.Log(log.InfoLevel, logMsgMySQLChecked)
 
 	if _, err := c.tlsChecker.Handle(ctx); err != nil {
 		return nil, multierr.Combine(errFailedToCheckTLS, err)
 	}
 
-	log.Println(logMsgTLSChecked)
+	c.logger.Log(log.InfoLevel, logMsgTLSChecked)
 
 	if _, err := c.smtpChecker.Handle(ctx); err != nil {
 		return nil, multierr.Combine(errFailedToCheckSMTP, err)
 	}
 
-	log.Println(logMsgSMTPChecked)
+	c.logger.Log(log.InfoLevel, logMsgSMTPChecked)
 
 	if _, err := c.ssoChecker.Handle(ctx); err != nil {
 		return nil, multierr.Combine(errFailedToCheckSSO, err)
 	}
 
-	log.Println(logMsgSSOChecked)
+	c.logger.Log(log.InfoLevel, logMsgSSOChecked)
 
 	jwksURI, err := util.UnwrapValErr[*string](c.oidcChecker.Handle(ctx))
 	if err != nil {
@@ -137,20 +139,21 @@ func (c *CloudChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, nil
 	}
 
-	log.Println(logMsgOIDCURLChecked)
+	c.logger.Log(log.InfoLevel, logMsgOIDCURLChecked)
 
 	if _, err := c.nodeGroupChecker.Handle(ctx); err != nil {
 		return nil, multierr.Combine(nodegroupchecker.ErrFailedToCheckNodeGroups, err)
 	}
 
-	log.Println(nodegroupchecker.LogMsgNodeGroupsChecked)
+	c.logger.Log(log.InfoLevel, nodegroupchecker.LogMsgNodeGroupsChecked)
 
 	return []any{jwksURI}, nil
 }
 
 // New is the function that creates a new cloud checker.
-func New(vcloud cloud.Cloud, envConfig *envconfig.EnvConfig, clientset kubernetes.Interface, httpClient *http.Client) *CloudChecker {
+func New(logger *log.Logger, vcloud cloud.Cloud, envConfig *envconfig.EnvConfig, clientset kubernetes.Interface, httpClient *http.Client) *CloudChecker {
 	c := &CloudChecker{
+		logger:     logger,
 		vcloud:     vcloud,
 		envConfig:  envConfig,
 		clientset:  clientset,

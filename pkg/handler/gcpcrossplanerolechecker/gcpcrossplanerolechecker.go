@@ -4,7 +4,6 @@ package gcpcrossplanerolechecker
 import (
 	"context"
 	"errors"
-	"log"
 	"strings"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
@@ -12,6 +11,7 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/crossplanerolechecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/k8s/kubeutil"
+	"github.com/charmbracelet/log"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -153,6 +153,8 @@ var constExpectedRolePermissions = map[string]struct{}{
 
 // GCPCrossplaneRoleChecker is the type that contains the check functions for GCP Crossplane role.
 type GCPCrossplaneRoleChecker struct {
+	// logger is the logger.
+	logger *log.Logger
 	// envConfig is the environment configuration.
 	envConfig *envconfig.EnvConfig
 	// clientset is the Kubernetes client.
@@ -196,7 +198,7 @@ func (c *GCPCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 			return nil, err
 		}
 
-		log.Printf(constant.LogMsgPodDeleted, constant.NamespaceCrossplane, podName)
+		c.logger.Logf(log.InfoLevel, constant.LogMsgPodDeleted, constant.NamespaceCrossplane, podName)
 	} else if !apierrors.IsNotFound(err) {
 		return nil, err
 	}
@@ -205,14 +207,14 @@ func (c *GCPCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 		return nil, err
 	}
 
-	log.Printf(constant.LogMsgPodCreated, constant.NamespaceCrossplane, podName)
+	c.logger.Logf(log.InfoLevel, constant.LogMsgPodCreated, constant.NamespaceCrossplane, podName)
 
-	phase, err := kubeutil.WaitForPodToSucceedOrFail(ctx, c.clientset, constant.NamespaceCrossplane, podName)
+	phase, err := kubeutil.WaitForPodToSucceedOrFail(ctx, c.logger, c.clientset, constant.NamespaceCrossplane, podName)
 	if err != nil {
 		return nil, err
 	}
 
-	logs, err := kubeutil.PodLogs(ctx, c.clientset, constant.NamespaceCrossplane, podName)
+	logs, err := kubeutil.PodLogs(ctx, c.logger, c.clientset, constant.NamespaceCrossplane, podName)
 	if err != nil {
 		return nil, err
 	}
@@ -255,14 +257,15 @@ func (c *GCPCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 		return nil, err
 	}
 
-	log.Printf(constant.LogMsgPodDeleted, constant.NamespaceCrossplane, podName)
+	c.logger.Logf(log.InfoLevel, constant.LogMsgPodDeleted, constant.NamespaceCrossplane, podName)
 
 	return nil, nil
 }
 
 // New is the function that creates a new GCP Crossplane role checker.
-func New(envConfig *envconfig.EnvConfig, clientset kubernetes.Interface) *GCPCrossplaneRoleChecker {
+func New(logger *log.Logger, envConfig *envconfig.EnvConfig, clientset kubernetes.Interface) *GCPCrossplaneRoleChecker {
 	return &GCPCrossplaneRoleChecker{
+		logger:    logger,
 		envConfig: envConfig,
 		clientset: clientset,
 	}

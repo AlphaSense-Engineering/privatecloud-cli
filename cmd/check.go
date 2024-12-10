@@ -4,16 +4,18 @@ package cmd
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/k8s/kubeutil"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
+	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
 	"gopkg.in/yaml.v2"
@@ -91,6 +93,8 @@ var constRoleNamespaces = []string{
 
 // checkCmd is the command to check the infrastructure.
 type checkCmd struct {
+	// logger is the logger.
+	logger *log.Logger
 	// cobraCmd is the Cobra command.
 	cobraCmd *cobra.Command
 
@@ -143,7 +147,7 @@ func (c *checkCmd) createServiceAccount(ctx context.Context, serviceAccountName 
 		return multierr.Combine(errFailedToCreateServiceAccount, err)
 	}
 
-	log.Printf(logMsgServiceAccountCreated, namespaceDefault, serviceAccount.Name)
+	c.logger.Logf(log.InfoLevel, logMsgServiceAccountCreated, namespaceDefault, serviceAccount.Name)
 
 	return nil
 }
@@ -201,7 +205,7 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 			return multierr.Combine(errFailedToCreateRole, err)
 		}
 
-		log.Printf(logMsgRoleCreated, pair.namespace, role.Name)
+		c.logger.Logf(log.InfoLevel, logMsgRoleCreated, pair.namespace, role.Name)
 	}
 
 	clusterRole := &rbacv1.ClusterRole{
@@ -215,7 +219,7 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 		return multierr.Combine(errFailedToCreateClusterRole, err)
 	}
 
-	log.Printf(logMsgClusterRoleCreated, clusterRole.Name)
+	c.logger.Logf(log.InfoLevel, logMsgClusterRoleCreated, clusterRole.Name)
 
 	return nil
 }
@@ -255,7 +259,7 @@ func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccountName st
 			return multierr.Combine(errFailedToCreateRoleBinding, err)
 		}
 
-		log.Printf(logMsgRoleBindingCreated, ns, roleBindingName)
+		c.logger.Logf(log.InfoLevel, logMsgRoleBindingCreated, ns, roleBindingName)
 	}
 
 	if _, err := c.clientset.RbacV1().ClusterRoleBindings().Create(ctx, &rbacv1.ClusterRoleBinding{
@@ -272,7 +276,7 @@ func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccountName st
 		return multierr.Combine(errFailedToCreateClusterRoleBinding, err)
 	}
 
-	log.Printf(logMsgClusterRoleBindingCreated, roleBindingName)
+	c.logger.Logf(log.InfoLevel, logMsgClusterRoleBindingCreated, roleBindingName)
 
 	return nil
 }
@@ -321,23 +325,60 @@ func (c *checkCmd) createPod(ctx context.Context, serviceAccountName string) err
 		return multierr.Combine(errFailedToCreatePod, err)
 	}
 
-	log.Printf(constant.LogMsgPodCreated, namespaceDefault, constant.AppName)
+	c.logger.Logf(log.InfoLevel, constant.LogMsgPodCreated, namespaceDefault, constant.AppName)
 
 	return nil
 }
 
 // printPodLogs prints the pod logs.
 func (c *checkCmd) printPodLogs(ctx context.Context) error {
-	logs, err := kubeutil.PodLogs(ctx, c.clientset, namespaceDefault, constant.AppName)
+	logs, err := kubeutil.PodLogs(ctx, c.logger, c.clientset, namespaceDefault, constant.AppName)
 	if err != nil {
 		return err
 	}
 
-	log.SetFlags(0)
+	// logEntry is the struct that represents a log entry.
+	type logEntry struct {
+		// Timestamp is the Timestamp of the log entry.
+		Timestamp string `json:"time"`
+		// Level is the Level of the log entry.
+		Level string `json:"level"`
+		// Message is the Message of the log entry.
+		Message string `json:"msg"`
+	}
 
-	log.Println(strings.Join(logs, "\n"))
+	for _, logStr := range logs {
+		var e logEntry
 
-	log.SetFlags(constant.LogFlags)
+		if err := json.Unmarshal([]byte(logStr), &e); err != nil {
+			return err
+		}
+
+		if e.Level == constant.EmptyString || e.Message == constant.EmptyString || e.Timestamp == constant.EmptyString {
+			continue
+		}
+
+		level, err := log.ParseLevel(e.Level)
+		if err != nil {
+			return err
+		}
+
+		parsedTime, err := time.Parse(log.DefaultTimeFormat, e.Timestamp)
+		if err != nil {
+			return err
+		}
+
+		c.logger.SetTimeFunction(func(_ time.Time) time.Time { return parsedTime })
+
+		c.logger.Log(level, e.Message)
+
+		if level == log.FatalLevel {
+			os.Exit(1)
+		}
+	}
+
+	// Reset the time function to the default one, converting to UTC.
+	c.logger.SetTimeFunction(constant.LogDefaultTimeFunc)
 
 	return nil
 }
@@ -372,7 +413,7 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 		return multierr.Combine(errFailedToDeletePod, err)
 	}
 
-	log.Printf(constant.LogMsgPodDeleted, namespaceDefault, constant.AppName)
+	c.logger.Logf(log.InfoLevel, constant.LogMsgPodDeleted, namespaceDefault, constant.AppName)
 
 	if err = c.clientset.RbacV1().ClusterRoleBindings().Delete(
 		ctx,
@@ -382,7 +423,7 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 		return multierr.Combine(errFailedToDeleteRoleBinding, err)
 	}
 
-	log.Printf(logMsgClusterRoleBindingDeleted, roleBindingName)
+	c.logger.Logf(log.InfoLevel, logMsgClusterRoleBindingDeleted, roleBindingName)
 
 	if err = c.clientset.RbacV1().ClusterRoles().Delete(
 		ctx,
@@ -392,7 +433,7 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 		return multierr.Combine(errFailedToDeleteRole, err)
 	}
 
-	log.Printf(logMsgClusterRoleDeleted, roleName)
+	c.logger.Logf(log.InfoLevel, logMsgClusterRoleDeleted, roleName)
 
 	for _, ns := range constRoleNamespaces {
 		if err = c.clientset.RbacV1().RoleBindings(ns).Delete(
@@ -403,7 +444,7 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 			return multierr.Combine(errFailedToDeleteRoleBinding, err)
 		}
 
-		log.Printf(logMsgRoleBindingDeleted, ns, roleBindingName)
+		c.logger.Logf(log.InfoLevel, logMsgRoleBindingDeleted, ns, roleBindingName)
 
 		if err = c.clientset.RbacV1().Roles(ns).Delete(
 			ctx,
@@ -413,14 +454,14 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 			return multierr.Combine(errFailedToDeleteRole, err)
 		}
 
-		log.Printf(logMsgRoleDeleted, ns, roleName)
+		c.logger.Logf(log.InfoLevel, logMsgRoleDeleted, ns, roleName)
 	}
 
 	if err = c.clientsetSA.Delete(ctx, serviceAccountName, metav1.DeleteOptions{}); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
 		return multierr.Combine(errFailedToDeleteServiceAccount, err)
 	}
 
-	log.Printf(logMsgServiceAccountDeleted, namespaceDefault, serviceAccountName)
+	c.logger.Logf(log.InfoLevel, logMsgServiceAccountDeleted, namespaceDefault, serviceAccountName)
 
 	if pod != nil && !allowNotFound && pod.Status.Phase == corev1.PodFailed {
 		os.Exit(1)
@@ -432,7 +473,7 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 // Run is the run function for the Check command.
 //
 // nolint:funlen
-func (c *checkCmd) Run(cobraCmd *cobra.Command, args []string) {
+func (c *checkCmd) Run(_ *cobra.Command, args []string) {
 	const (
 		// logMsgInfraCheckStarted is the message that is logged when the infrastructure check starts.
 		logMsgInfraCheckStarted = "started infrastructure check"
@@ -441,33 +482,27 @@ func (c *checkCmd) Run(cobraCmd *cobra.Command, args []string) {
 		logMsgEnvConfigRead = "read environment configuration from %s"
 	)
 
-	c.cobraCmd = cobraCmd
-
-	log.SetFlags(constant.LogFlags)
-
-	log.Println(logMsgInfraCheckStarted)
+	c.logger.Log(log.InfoLevel, logMsgInfraCheckStarted)
 
 	firstStepFile := args[0]
 
-	log.Printf(logMsgEnvConfigRead, firstStepFile)
+	c.logger.Logf(log.InfoLevel, logMsgEnvConfigRead, firstStepFile)
 
 	var err error
 
 	c.envConfig, err = envconfig.NewFromPath(firstStepFile)
 	if err != nil {
-		log.Fatalln(multierr.Combine(errFailedToReadEnvConfig, err))
-
-		return
+		c.logger.Fatal(multierr.Combine(errFailedToReadEnvConfig, err))
 	}
 
 	var path string
 
 	c.kubeConfig, path, err = kubeutil.Config(util.Flag(c.cobraCmd, flagKubeConfig))
 	if err != nil {
-		log.Fatalln(multierr.Combine(errFailedToGetKubeConfig, err))
+		c.logger.Fatal(multierr.Combine(errFailedToGetKubeConfig, err))
 	}
 
-	log.Printf(logMsgKubeLoadedConfig, path)
+	c.logger.Logf(log.InfoLevel, logMsgKubeLoadedConfig, path)
 
 	serviceAccountName := fmt.Sprintf("%s-sa", constant.AppName)
 
@@ -478,58 +513,59 @@ func (c *checkCmd) Run(cobraCmd *cobra.Command, args []string) {
 	ctx := context.Background()
 
 	if err = c.setupClientsets(); err != nil {
-		log.Fatalln(err)
+		c.logger.Fatal(err)
 	}
 
 	if util.FlagBool(c.cobraCmd, flagCleanupOnly) {
 		if err = c.cleanupResources(ctx, roleBindingName, roleName, serviceAccountName, true); err != nil {
-			log.Fatalln(err)
+			c.logger.Fatal(err)
 		}
 
 		return
 	}
 
-	log.Println(logMsgKubeClientsetCreated)
+	c.logger.Log(log.InfoLevel, logMsgKubeClientsetCreated)
 
 	if err = c.createServiceAccount(ctx, serviceAccountName); err != nil {
-		log.Fatalln(err)
+		c.logger.Fatal(err)
 	}
 
 	if err = c.createRoles(ctx, roleName); err != nil {
-		log.Fatalln(err)
+		c.logger.Fatal(err)
 	}
 
 	if err = c.createRoleBindings(ctx, serviceAccountName, roleBindingName, roleName); err != nil {
-		log.Fatalln(err)
+		c.logger.Fatal(err)
 	}
 
 	if err = c.createPod(ctx, serviceAccountName); err != nil {
-		log.Fatalln(err)
+		c.logger.Fatal(err)
 	}
 
-	_, err = kubeutil.WaitForPodToSucceedOrFail(ctx, c.clientset, namespaceDefault, constant.AppName)
+	_, err = kubeutil.WaitForPodToSucceedOrFail(ctx, c.logger, c.clientset, namespaceDefault, constant.AppName)
 	if err != nil {
-		log.Fatalln(err)
+		c.logger.Fatal(err)
 	}
 
 	if err = c.printPodLogs(ctx); err != nil {
-		log.Fatalln(err)
+		c.logger.Fatal(err)
 	}
 
 	if err = c.cleanupResources(ctx, roleBindingName, roleName, serviceAccountName, false); err != nil {
-		log.Fatalln(err)
+		c.logger.Fatal(err)
 	}
 }
 
 // newCheckCmd returns a new Check command.
-func newCheckCmd() *checkCmd {
-	return &checkCmd{}
+func newCheckCmd(logger *log.Logger, cobraCmd *cobra.Command) *checkCmd {
+	return &checkCmd{
+		logger:   logger,
+		cobraCmd: cobraCmd,
+	}
 }
 
 // Check returns a Cobra command to check the infrastructure.
-func Check() *cobra.Command {
-	cmd := newCheckCmd()
-
+func Check(logger *log.Logger) *cobra.Command {
 	cobraCmd := &cobra.Command{
 		Use:   "check <first_step_file>",
 		Short: "Check the infrastructure",
@@ -541,8 +577,11 @@ If you do not specify the Kubernetes configuration file, the command will use th
 			flagKubeConfig,
 		),
 		Args: cobra.ExactArgs(1),
-		Run:  cmd.Run,
 	}
+
+	cmd := newCheckCmd(logger, cobraCmd)
+
+	cobraCmd.Run = cmd.Run
 
 	const (
 		// defaultDockerRepo is the default repository to use for the pod image.

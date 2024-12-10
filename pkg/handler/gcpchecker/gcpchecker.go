@@ -3,17 +3,19 @@ package gcpchecker
 
 import (
 	"context"
-	"log"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/crossplanerolechecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/gcpcrossplanerolechecker"
+	"github.com/charmbracelet/log"
 	"k8s.io/client-go/kubernetes"
 )
 
 // GCPChecker is the type that contains the infrastructure check functions for GCP.
 type GCPChecker struct {
+	// logger is the logger.
+	logger *log.Logger
 	// envConfig is the environment configuration.
 	envConfig *envconfig.EnvConfig
 	// clientset is the Kubernetes client.
@@ -27,7 +29,7 @@ var _ handler.Handler = &GCPChecker{}
 
 // setup is the function that sets up the GCP checker.
 func (c *GCPChecker) setup() {
-	c.crossplaneRoleChecker = gcpcrossplanerolechecker.New(c.envConfig, c.clientset)
+	c.crossplaneRoleChecker = gcpcrossplanerolechecker.New(c.logger, c.envConfig, c.clientset)
 }
 
 // Handle is the function that handles the infrastructure check.
@@ -39,14 +41,15 @@ func (c *GCPChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, crossplanerolechecker.ErrFailedToCheckCrossplaneRole
 	}
 
-	log.Println(crossplanerolechecker.LogMsgCrossplaneRoleChecked)
+	c.logger.Log(log.InfoLevel, crossplanerolechecker.LogMsgCrossplaneRoleChecked)
 
 	return nil, nil
 }
 
 // New is the function that creates a new GCP checker.
-func New(envConfig *envconfig.EnvConfig, clientset kubernetes.Interface) *GCPChecker {
+func New(logger *log.Logger, envConfig *envconfig.EnvConfig, clientset kubernetes.Interface) *GCPChecker {
 	c := &GCPChecker{
+		logger:    logger,
 		envConfig: envConfig,
 		clientset: clientset,
 	}

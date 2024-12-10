@@ -5,13 +5,13 @@ import (
 	"bufio"
 	"context"
 	"errors"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
+	"github.com/charmbracelet/log"
 	"go.uber.org/multierr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,7 +84,13 @@ func Config(path string) (config *rest.Config, pathToUse string, err error) {
 }
 
 // WaitForPodToSucceedOrFail waits for the pod to succeed or fail.
-func WaitForPodToSucceedOrFail(ctx context.Context, clientset kubernetes.Interface, namespace string, podName string) (phase corev1.PodPhase, err error) {
+func WaitForPodToSucceedOrFail(
+	ctx context.Context,
+	logger *log.Logger,
+	clientset kubernetes.Interface,
+	namespace string,
+	podName string,
+) (phase corev1.PodPhase, err error) {
 	const (
 		// logMsgPodWaitingToSucceedOrFail is the message that is logged when we are waiting for the pod to succeed or fail.
 		logMsgPodWaitingToSucceedOrFail = "waiting for %s/%s Pod to succeed or fail..."
@@ -96,7 +102,7 @@ func WaitForPodToSucceedOrFail(ctx context.Context, clientset kubernetes.Interfa
 		logMsgPodFailed = "%s/%s Pod failed"
 	)
 
-	log.Printf(logMsgPodWaitingToSucceedOrFail, namespace, podName)
+	logger.Logf(log.InfoLevel, logMsgPodWaitingToSucceedOrFail, namespace, podName)
 
 	var pod *corev1.Pod
 
@@ -109,11 +115,11 @@ func WaitForPodToSucceedOrFail(ctx context.Context, clientset kubernetes.Interfa
 		phase = pod.Status.Phase
 
 		if phase == corev1.PodSucceeded {
-			log.Printf(logMsgPodSucceeded, namespace, podName)
+			logger.Logf(log.InfoLevel, logMsgPodSucceeded, namespace, podName)
 
 			break
 		} else if phase == corev1.PodFailed {
-			log.Printf(logMsgPodFailed, namespace, podName)
+			logger.Logf(log.ErrorLevel, logMsgPodFailed, namespace, podName)
 
 			break
 		}
@@ -125,7 +131,7 @@ func WaitForPodToSucceedOrFail(ctx context.Context, clientset kubernetes.Interfa
 }
 
 // PodLogs retrieves the pod logs.
-func PodLogs(ctx context.Context, clientset kubernetes.Interface, namespace string, podName string) ([]string, error) {
+func PodLogs(ctx context.Context, logger *log.Logger, clientset kubernetes.Interface, namespace string, podName string) ([]string, error) {
 	// logMsgPodLogStreamRetrieved is the message that is logged when the pod log stream is retrieved.
 	const logMsgPodLogStreamRetrieved = "retrieved log stream for %s/%s Pod, printing..."
 
@@ -137,7 +143,7 @@ func PodLogs(ctx context.Context, clientset kubernetes.Interface, namespace stri
 	}
 	defer podLogStream.Close() // nolint:errcheck
 
-	log.Printf(logMsgPodLogStreamRetrieved, namespace, podName)
+	logger.Logf(log.InfoLevel, logMsgPodLogStreamRetrieved, namespace, podName)
 
 	var logLines []string
 

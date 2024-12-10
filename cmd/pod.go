@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"log"
 	"net/http"
 	"os"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/cloudchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/gcpchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/k8s/kubeutil"
+	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
 	corev1 "k8s.io/api/core/v1"
@@ -48,7 +48,10 @@ var (
 )
 
 // podCmd is the command that checks the infrastructure of the cluster where it is running on.
-type podCmd struct{}
+type podCmd struct {
+	// logger is the logger.
+	logger *log.Logger
+}
 
 var _ cmd = &podCmd{}
 
@@ -73,46 +76,40 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 		logMsgInfraCheckCompletedSuccessfully = "infrastructure check completed successfully"
 	)
 
-	log.SetFlags(constant.LogFlags)
+	c.logger.SetFormatter(log.JSONFormatter)
 
-	log.Printf(logMsgPodStarted, constant.AppName)
+	c.logger.Logf(log.InfoLevel, logMsgPodStarted, constant.AppName)
 
 	envConfigBase64 := os.Getenv(envVarEnvConfig)
 	if envConfigBase64 == constant.EmptyString {
-		log.Fatalln(errEnvConfigFlagIsNotSetOrEmpty)
-
-		return
+		c.logger.Fatal(errEnvConfigFlagIsNotSetOrEmpty)
 	}
 
 	envConfigBytes, err := base64.StdEncoding.DecodeString(envConfigBase64)
 	if err != nil {
-		log.Fatalln(multierr.Combine(errFailedToDecodeEnvConfig, err))
-
-		return
+		c.logger.Fatal(multierr.Combine(errFailedToDecodeEnvConfig, err))
 	}
 
 	envConfig, err := envconfig.NewFromBytes(envConfigBytes)
 	if err != nil {
-		log.Fatalln(multierr.Combine(errFailedToReadEnvConfig, err))
-
-		return
+		c.logger.Fatal(multierr.Combine(errFailedToReadEnvConfig, err))
 	}
 
-	log.Println(logMsgEnvConfigDecoded)
+	c.logger.Log(log.InfoLevel, logMsgEnvConfigDecoded)
 
 	kubeConfig, path, err := kubeutil.Config(constant.EmptyString)
 	if err != nil {
-		log.Fatalln(multierr.Combine(errFailedToGetKubeConfig, err))
+		c.logger.Fatal(multierr.Combine(errFailedToGetKubeConfig, err))
 	}
 
-	log.Printf(logMsgKubeLoadedConfig, path)
+	c.logger.Logf(log.InfoLevel, logMsgKubeLoadedConfig, path)
 
 	clientset, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
-		log.Fatalln(multierr.Combine(errFailedToCreateKubernetesClientset, err))
+		c.logger.Fatal(multierr.Combine(errFailedToCreateKubernetesClientset, err))
 	}
 
-	log.Println(logMsgKubeClientsetCreated)
+	c.logger.Log(log.InfoLevel, logMsgKubeClientsetCreated)
 
 	vcloud := cloud.Cloud(envConfig.Spec.CloudSpec.Provider)
 
@@ -123,10 +120,10 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 			Name: constant.NamespaceCrossplane,
 		},
 	}, metav1.CreateOptions{}); err != nil && !apierrors.IsAlreadyExists(err) {
-		log.Fatalln(multierr.Combine(errFailedToEnsureNamespace, err))
+		c.logger.Fatal(multierr.Combine(errFailedToEnsureNamespace, err))
 	}
 
-	log.Printf(logMsgNamespaceEnsured, constant.NamespaceCrossplane)
+	c.logger.Logf(log.InfoLevel, logMsgNamespaceEnsured, constant.NamespaceCrossplane)
 
 	var serviceAccountName string
 
@@ -137,7 +134,7 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 	} else if vcloud == cloud.GCP {
 		serviceAccountName = constant.ServiceAccountNameGCP
 	} else {
-		log.Fatalln(cloud.NewUnsupportedCloudError(vcloud))
+		c.logger.Fatal(cloud.NewUnsupportedCloudError(vcloud))
 	}
 
 	sa := &corev1.ServiceAccount{
@@ -156,20 +153,20 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 	if _, err = clientset.CoreV1().ServiceAccounts(constant.NamespaceCrossplane).Create(
 		ctx, sa, metav1.CreateOptions{},
 	); err != nil && !apierrors.IsAlreadyExists(err) {
-		log.Fatalln(multierr.Combine(errFailedToEnsureServiceAccount, err))
+		c.logger.Fatal(multierr.Combine(errFailedToEnsureServiceAccount, err))
 	}
 
-	log.Printf(logMsgServiceAccountEnsured, constant.NamespaceCrossplane, serviceAccountName)
+	c.logger.Logf(log.InfoLevel, logMsgServiceAccountEnsured, constant.NamespaceCrossplane, serviceAccountName)
 
 	httpClient := http.DefaultClient
 
-	cloudChecker := cloudchecker.New(vcloud, envConfig, clientset, httpClient)
+	cloudChecker := cloudchecker.New(c.logger, vcloud, envConfig, clientset, httpClient)
 
 	var jwksURI *string
 
 	rawJWKSURI, err := cloudChecker.Handle(ctx)
 	if err != nil {
-		log.Fatalln(multierr.Combine(errFailedToCheckInfrastructure, err))
+		c.logger.Fatal(multierr.Combine(errFailedToCheckInfrastructure, err))
 	}
 
 	if rawJWKSURI != nil {
@@ -178,34 +175,36 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 
 	// In GCP, we don't need to check the OIDC URL as it's not used.
 	if vcloud != cloud.GCP && jwksURI == nil {
-		log.Fatalln(multierr.Combine(errFailedToCheckInfrastructure, errJWKSURIRequired))
+		c.logger.Fatal(multierr.Combine(errFailedToCheckInfrastructure, errJWKSURIRequired))
 	}
 
 	var concreteCloudChecker handler.Handler
 
 	if vcloud == cloud.AWS {
-		concreteCloudChecker = awschecker.New(envConfig, clientset, httpClient, jwksURI)
+		concreteCloudChecker = awschecker.New(c.logger, envConfig, clientset, httpClient, jwksURI)
 	} else if vcloud == cloud.Azure {
-		concreteCloudChecker = azurechecker.New(envConfig, clientset, httpClient, jwksURI)
+		concreteCloudChecker = azurechecker.New(c.logger, envConfig, clientset, httpClient, jwksURI)
 	} else if vcloud == cloud.GCP {
-		concreteCloudChecker = gcpchecker.New(envConfig, clientset)
+		concreteCloudChecker = gcpchecker.New(c.logger, envConfig, clientset)
 	}
 
 	if _, err := concreteCloudChecker.Handle(ctx); err != nil {
-		log.Fatalln(multierr.Combine(errFailedToCheckInfrastructure, err))
+		c.logger.Fatal(multierr.Combine(errFailedToCheckInfrastructure, err))
 	}
 
-	log.Println(logMsgInfraCheckCompletedSuccessfully)
+	c.logger.Log(log.InfoLevel, logMsgInfraCheckCompletedSuccessfully)
 }
 
 // newPodCmd returns a new Pod command.
-func newPodCmd() *podCmd {
-	return &podCmd{}
+func newPodCmd(logger *log.Logger) *podCmd {
+	return &podCmd{
+		logger: logger,
+	}
 }
 
 // Pod returns a Cobra command that checks the infrastructure of the cluster where it is running on.
-func Pod() *cobra.Command {
-	cmd := newPodCmd()
+func Pod(logger *log.Logger) *cobra.Command {
+	cmd := newPodCmd(logger)
 
 	return &cobra.Command{
 		Use:   "pod",
