@@ -11,15 +11,17 @@ import (
 )
 
 var (
-	// ErrFailedToCheckNodeGroups is the error that is returned when the node groups checking fails.
-	ErrFailedToCheckNodeGroups = errors.New("failed to check node groups")
-
 	// errNoNodesWithGPULabel is the error that is returned when no nodes with the GPU label are found.
 	errNoNodesWithGPULabel = errors.New("no nodes with GPU label found")
 )
 
-// LogMsgNodeGroupsChecked is the message that is logged when the node groups are checked.
-const LogMsgNodeGroupsChecked = "checked node groups"
+const (
+	// LogMsgNodeGroupsChecked is the message that is logged when the node groups are checked.
+	LogMsgNodeGroupsChecked = "checked node groups"
+
+	// LogMsgNodeGroupsCheckedWithError is the message that is logged when the node groups are checked with an error.
+	LogMsgNodeGroupsCheckedWithError = "checked node groups; %s"
+)
 
 // NodeGroupChecker is the type that contains the node group check functions.
 type NodeGroupChecker struct {

@@ -142,10 +142,10 @@ func (c *CloudChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	c.logger.Log(log.InfoLevel, logMsgOIDCURLChecked)
 
 	if _, err := c.nodeGroupChecker.Handle(ctx); err != nil {
-		return nil, multierr.Combine(nodegroupchecker.ErrFailedToCheckNodeGroups, err)
+		c.logger.Logf(log.WarnLevel, nodegroupchecker.LogMsgNodeGroupsCheckedWithError, err.Error())
+	} else {
+		c.logger.Log(log.InfoLevel, nodegroupchecker.LogMsgNodeGroupsChecked)
 	}
-
-	c.logger.Log(log.InfoLevel, nodegroupchecker.LogMsgNodeGroupsChecked)
 
 	return []any{jwksURI}, nil
 }
