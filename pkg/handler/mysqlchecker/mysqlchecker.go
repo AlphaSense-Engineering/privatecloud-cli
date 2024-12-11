@@ -4,37 +4,15 @@ package mysqlchecker
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/db/mysqlutil"
+	selferrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
-
-// configMismatchError is the error that is returned when the configuration of the MySQL is mismatched.
-type configMismatchError struct {
-	// key is the key that is mismatched.
-	key string
-	// expected is the expected value.
-	expected string
-	// got is the got value.
-	got string
-}
-
-var _ error = &configMismatchError{}
-
-// Error is a function that returns the error message.
-func (e *configMismatchError) Error() string {
-	return fmt.Sprintf("expected %s to be %s, got %s", e.key, e.expected, e.got)
-}
-
-// newConfigMismatchError is a function that returns a new config mismatch error.
-func newConfigMismatchError(key, expected, got string) *configMismatchError {
-	return &configMismatchError{key: key, expected: expected, got: got}
-}
 
 var (
 	// constExpectedConfig is the map of expected configuration for the MySQL.
@@ -98,7 +76,7 @@ func (c *MySQLChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		}
 
 		if got != expected {
-			return nil, newConfigMismatchError(k, expected, got)
+			return nil, selferrors.NewKeyExpectedGot(k, expected, got)
 		}
 	}
 

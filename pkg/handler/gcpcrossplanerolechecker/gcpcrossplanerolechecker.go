@@ -8,12 +8,12 @@ import (
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
+	selferrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/crossplanerolechecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/k8s/kubeutil"
 	"github.com/charmbracelet/log"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -199,7 +199,7 @@ func (c *GCPCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 		}
 
 		c.logger.Logf(log.InfoLevel, constant.LogMsgPodDeleted, constant.NamespaceCrossplane, podName)
-	} else if !apierrors.IsNotFound(err) {
+	} else if !k8serrors.IsNotFound(err) {
 		return nil, err
 	}
 
@@ -250,7 +250,7 @@ func (c *GCPCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 	}
 
 	if len(missingPermissions) > 0 {
-		return nil, crossplanerolechecker.NewRoleMissingPermissionsError(missingPermissions)
+		return nil, selferrors.NewRoleMissingPermissions(missingPermissions)
 	}
 
 	if err := clientsetPod.Delete(ctx, podName, metav1.DeleteOptions{}); err != nil {

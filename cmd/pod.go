@@ -12,6 +12,7 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud/gcpcloudutil"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
+	selferrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/awschecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/azurechecker"
@@ -22,7 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -119,7 +120,7 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: constant.NamespaceCrossplane,
 		},
-	}, metav1.CreateOptions{}); err != nil && !apierrors.IsAlreadyExists(err) {
+	}, metav1.CreateOptions{}); err != nil && !k8serrors.IsAlreadyExists(err) {
 		c.logger.Fatal(multierr.Combine(errFailedToEnsureNamespace, err))
 	}
 
@@ -134,7 +135,7 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 	} else if vcloud == cloud.GCP {
 		serviceAccountName = constant.ServiceAccountNameGCP
 	} else {
-		c.logger.Fatal(cloud.NewUnsupportedCloudError(vcloud))
+		c.logger.Fatal(selferrors.NewUnsupportedCloud(vcloud))
 	}
 
 	sa := &corev1.ServiceAccount{
@@ -152,7 +153,7 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 
 	if _, err = clientset.CoreV1().ServiceAccounts(constant.NamespaceCrossplane).Create(
 		ctx, sa, metav1.CreateOptions{},
-	); err != nil && !apierrors.IsAlreadyExists(err) {
+	); err != nil && !k8serrors.IsAlreadyExists(err) {
 		c.logger.Fatal(multierr.Combine(errFailedToEnsureServiceAccount, err))
 	}
 

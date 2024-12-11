@@ -10,8 +10,8 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud/azurecloudutil"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
+	selferrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/crossplanerolechecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization"
 )
@@ -158,7 +158,7 @@ func (c *AzureCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]an
 	}
 
 	if len(missingPermissions) > 0 {
-		return nil, crossplanerolechecker.NewRoleMissingPermissionsError(missingPermissions)
+		return nil, selferrors.NewRoleMissingPermissions(missingPermissions)
 	}
 
 	return nil, nil

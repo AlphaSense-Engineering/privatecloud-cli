@@ -21,7 +21,7 @@ import (
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -405,11 +405,11 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 	)
 
 	pod, err := c.clientsetPod.Get(ctx, constant.AppName, metav1.GetOptions{})
-	if err != nil && (!allowNotFound && !apierrors.IsNotFound(err)) {
+	if err != nil && (!allowNotFound && !k8serrors.IsNotFound(err)) {
 		return multierr.Combine(kubeutil.ErrFailedToGetPod, err)
 	}
 
-	if err = c.clientsetPod.Delete(ctx, constant.AppName, metav1.DeleteOptions{}); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
+	if err = c.clientsetPod.Delete(ctx, constant.AppName, metav1.DeleteOptions{}); err != nil && !allowNotFound && !k8serrors.IsNotFound(err) {
 		return multierr.Combine(errFailedToDeletePod, err)
 	}
 
@@ -419,7 +419,7 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 		ctx,
 		roleBindingName,
 		metav1.DeleteOptions{},
-	); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
+	); err != nil && !allowNotFound && !k8serrors.IsNotFound(err) {
 		return multierr.Combine(errFailedToDeleteRoleBinding, err)
 	}
 
@@ -429,7 +429,7 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 		ctx,
 		roleName,
 		metav1.DeleteOptions{},
-	); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
+	); err != nil && !allowNotFound && !k8serrors.IsNotFound(err) {
 		return multierr.Combine(errFailedToDeleteRole, err)
 	}
 
@@ -440,7 +440,7 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 			ctx,
 			roleBindingName,
 			metav1.DeleteOptions{},
-		); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
+		); err != nil && !allowNotFound && !k8serrors.IsNotFound(err) {
 			return multierr.Combine(errFailedToDeleteRoleBinding, err)
 		}
 
@@ -450,14 +450,14 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 			ctx,
 			roleName,
 			metav1.DeleteOptions{},
-		); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
+		); err != nil && !allowNotFound && !k8serrors.IsNotFound(err) {
 			return multierr.Combine(errFailedToDeleteRole, err)
 		}
 
 		c.logger.Logf(log.InfoLevel, logMsgRoleDeleted, ns, roleName)
 	}
 
-	if err = c.clientsetSA.Delete(ctx, serviceAccountName, metav1.DeleteOptions{}); err != nil && !allowNotFound && !apierrors.IsNotFound(err) {
+	if err = c.clientsetSA.Delete(ctx, serviceAccountName, metav1.DeleteOptions{}); err != nil && !allowNotFound && !k8serrors.IsNotFound(err) {
 		return multierr.Combine(errFailedToDeleteServiceAccount, err)
 	}
 
