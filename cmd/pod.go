@@ -195,7 +195,7 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 	c.logger.Log(log.InfoLevel, logMsgInfraCheckCompletedSuccessfully)
 }
 
-// newPodCmd returns a new Pod command.
+// newPodCmd returns a new podCmd.
 func newPodCmd(logger *log.Logger) *podCmd {
 	return &podCmd{
 		logger: logger,

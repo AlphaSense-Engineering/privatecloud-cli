@@ -116,7 +116,7 @@ func (c *OIDCChecker) Handle(_ context.Context, _ ...any) ([]any, error) {
 	return []any{data.JWKSURI}, nil
 }
 
-// New is the function that creates a new OIDC checker.
+// New is the function that creates a new OIDCChecker.
 func New(vcloud cloud.Cloud, envConfig *envconfig.EnvConfig, httpGetter httpGetter) *OIDCChecker {
 	return &OIDCChecker{
 		vcloud:     vcloud,

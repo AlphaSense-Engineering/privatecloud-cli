@@ -164,7 +164,7 @@ func (c *AzureCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]an
 	return nil, nil
 }
 
-// New is the function that creates a new AWS Crossplane role checker.
+// New is the function that creates a new AzureCrossplaneRoleChecker.
 func New(envConfig *envconfig.EnvConfig, roleDefClient *armauthorization.RoleDefinitionsClient) *AzureCrossplaneRoleChecker {
 	return &AzureCrossplaneRoleChecker{
 		envConfig:     envConfig,

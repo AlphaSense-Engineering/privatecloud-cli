@@ -106,7 +106,7 @@ func (c *AzureChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	return nil, nil
 }
 
-// New is the function that creates a new Azure checker.
+// New is the function that creates a new AzureChecker.
 func New(logger *log.Logger, envConfig *envconfig.EnvConfig, clientset kubernetes.Interface, httpClient *http.Client, jwksURI *string) *AzureChecker {
 	c := &AzureChecker{
 		logger:     logger,

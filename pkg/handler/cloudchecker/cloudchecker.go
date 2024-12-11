@@ -150,7 +150,7 @@ func (c *CloudChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	return []any{jwksURI}, nil
 }
 
-// New is the function that creates a new cloud checker.
+// New is the function that creates a new CloudChecker.
 func New(logger *log.Logger, vcloud cloud.Cloud, envConfig *envconfig.EnvConfig, clientset kubernetes.Interface, httpClient *http.Client) *CloudChecker {
 	c := &CloudChecker{
 		logger:     logger,

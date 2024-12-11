@@ -70,7 +70,7 @@ func (c *JWTChecker) Handle(_ context.Context, args ...any) ([]any, error) {
 	return nil, nil
 }
 
-// New is the function that creates a new JWT checker.
+// New is the function that creates a new JWTChecker.
 func New(httpClient *http.Client, jwksURI *string) *JWTChecker {
 	return &JWTChecker{httpClient: httpClient, jwksURI: jwksURI}
 }

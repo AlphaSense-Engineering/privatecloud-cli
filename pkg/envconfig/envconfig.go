@@ -127,7 +127,7 @@ func (e *EnvConfig) OIDCURL() string {
 	}
 }
 
-// NewFromBytes returns a new environment configuration from the given bytes.
+// NewFromBytes returns a new EnvConfig from the given bytes.
 func NewFromBytes(data []byte) (*EnvConfig, error) {
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
 
@@ -153,7 +153,7 @@ func NewFromBytes(data []byte) (*EnvConfig, error) {
 	return nil, errNoEnvConfigKindFound
 }
 
-// NewFromPath returns a new environment configuration from the given path.
+// NewFromPath returns a new EnvConfig from the given path.
 func NewFromPath(path string) (*EnvConfig, error) {
 	yamlFile, err := os.ReadFile(path) // nolint:gosec
 	if err != nil {

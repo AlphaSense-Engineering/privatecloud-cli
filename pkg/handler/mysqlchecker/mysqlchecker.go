@@ -105,7 +105,7 @@ func (c *MySQLChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	return nil, nil
 }
 
-// New is a function that returns a new MySQL checker.
+// New is a function that returns a new MySQLChecker.
 func New(clientset kubernetes.Interface) *MySQLChecker {
 	return &MySQLChecker{clientset: clientset}
 }

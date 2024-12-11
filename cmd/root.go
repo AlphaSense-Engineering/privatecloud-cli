@@ -16,7 +16,7 @@ func (c *rootCmd) Run(cmd *cobra.Command, _ []string) {
 	_ = cmd.Help()
 }
 
-// newRootCmd returns a new root command.
+// newRootCmd returns a new rootCmd.
 func newRootCmd() *rootCmd {
 	return &rootCmd{}
 }

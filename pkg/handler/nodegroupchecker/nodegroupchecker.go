@@ -59,7 +59,7 @@ func (c *NodeGroupChecker) Handle(ctx context.Context, _ ...any) ([]any, error) 
 	return nil, errNoNodesWithGPULabel
 }
 
-// New is the function that creates a new node group checker.
+// New is the function that creates a new NodeGroupChecker.
 func New(clientset kubernetes.Interface) *NodeGroupChecker {
 	return &NodeGroupChecker{
 		clientset: clientset,

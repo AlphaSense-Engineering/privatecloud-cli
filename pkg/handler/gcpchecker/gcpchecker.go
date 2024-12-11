@@ -46,7 +46,7 @@ func (c *GCPChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	return nil, nil
 }
 
-// New is the function that creates a new GCP checker.
+// New is the function that creates a new GCPChecker.
 func New(logger *log.Logger, envConfig *envconfig.EnvConfig, clientset kubernetes.Interface) *GCPChecker {
 	c := &GCPChecker{
 		logger:    logger,

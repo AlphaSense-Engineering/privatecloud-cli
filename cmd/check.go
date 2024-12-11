@@ -556,7 +556,7 @@ func (c *checkCmd) Run(_ *cobra.Command, args []string) {
 	}
 }
 
-// newCheckCmd returns a new Check command.
+// newCheckCmd returns a new checkCmd.
 func newCheckCmd(logger *log.Logger, cobraCmd *cobra.Command) *checkCmd {
 	return &checkCmd{
 		logger:   logger,

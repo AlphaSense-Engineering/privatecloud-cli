@@ -42,7 +42,7 @@ func (c *TLSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	return nil, nil
 }
 
-// New is a function that returns a new TLS checker.
+// New is a function that returns a new TLSChecker.
 func New(clientset kubernetes.Interface) *TLSChecker {
 	return &TLSChecker{clientset: clientset}
 }

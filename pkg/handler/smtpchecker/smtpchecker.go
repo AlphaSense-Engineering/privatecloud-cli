@@ -77,7 +77,7 @@ func (c *SMTPChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	return nil, nil
 }
 
-// New is a function that returns a new SMTP checker.
+// New is a function that returns a new SMTPChecker.
 func New(clientset kubernetes.Interface) *SMTPChecker {
 	return &SMTPChecker{clientset: clientset}
 }

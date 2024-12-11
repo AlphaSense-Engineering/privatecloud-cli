@@ -262,7 +262,7 @@ func (c *GCPCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 	return nil, nil
 }
 
-// New is the function that creates a new GCP Crossplane role checker.
+// New is the function that creates a new GCPCrossplaneRoleChecker.
 func New(logger *log.Logger, envConfig *envconfig.EnvConfig, clientset kubernetes.Interface) *GCPCrossplaneRoleChecker {
 	return &GCPCrossplaneRoleChecker{
 		logger:    logger,
