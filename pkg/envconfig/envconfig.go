@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
-	selferrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
+	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
@@ -124,7 +124,7 @@ func (e *EnvConfig) OIDCURL() string {
 	case cloud.Azure:
 		return e.Spec.CloudSpec.Azure.OIDCURL
 	default:
-		panic(selferrors.NewUnsupportedCloud(v))
+		panic(pkgerrors.NewUnsupportedCloud(v))
 	}
 }
 

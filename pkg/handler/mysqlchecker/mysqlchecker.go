@@ -7,7 +7,7 @@ import (
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/db/mysqlutil"
-	selferrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
+	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,6 +48,9 @@ func (c *MySQLChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	const (
 		// secretName is the name of the secret that contains the MySQL credentials.
 		secretName = "default-creds"
+
+		// secretEndpointKey is the key of the endpoint in the secret.
+		secretEndpointKey = "endpoint"
 	)
 
 	secret, err := c.clientset.CoreV1().Secrets(constant.NamespaceMySQL).Get(ctx, secretName, metav1.GetOptions{})
@@ -57,7 +60,21 @@ func (c *MySQLChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 
 	data := util.ConvertMap[string, []byte, string, string](secret.Data, util.Identity[string], util.ByteSliceToString)
 
-	dsn := mysqlutil.DSN(data["username"], data["password"], data["endpoint"], data["port"])
+	if err := util.KeysExistAndNotEmptyOrErr(data, []string{
+		constant.SecretUsernameKey,
+		constant.SecretPasswordKey,
+		secretEndpointKey,
+		constant.SecretPortKey,
+	}); err != nil {
+		return nil, err
+	}
+
+	dsn := mysqlutil.DSN(
+		data[constant.SecretUsernameKey],
+		data[constant.SecretPasswordKey],
+		data[secretEndpointKey],
+		data[constant.SecretPortKey],
+	)
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
@@ -76,7 +93,7 @@ func (c *MySQLChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		}
 
 		if got != expected {
-			return nil, selferrors.NewKeyExpectedGot(k, expected, got)
+			return nil, pkgerrors.NewKeyExpectedGot(k, expected, got)
 		}
 	}
 

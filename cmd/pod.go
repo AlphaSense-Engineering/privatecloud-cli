@@ -12,7 +12,7 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud/gcpcloudutil"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
-	selferrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
+	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/awschecker"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/azurechecker"
@@ -135,7 +135,7 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 	} else if vcloud == cloud.GCP {
 		serviceAccountName = constant.ServiceAccountNameGCP
 	} else {
-		c.logger.Fatal(selferrors.NewUnsupportedCloud(vcloud))
+		c.logger.Fatal(pkgerrors.NewUnsupportedCloud(vcloud))
 	}
 
 	sa := &corev1.ServiceAccount{

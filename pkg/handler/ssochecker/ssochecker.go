@@ -3,18 +3,12 @@ package ssochecker
 
 import (
 	"context"
-	"errors"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-)
-
-var (
-	// errSAMLEntityIDNotSet is the error that the SAML entity ID is not set.
-	errSAMLEntityIDNotSet = errors.New("saml entity ID is not set")
 )
 
 // SSOChecker is the type that contains the check functions for the SSO.
@@ -42,8 +36,8 @@ func (c *SSOChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 
 	data := util.ConvertMap[string, []byte, string, string](secret.Data, util.Identity[string], util.ByteSliceToString)
 
-	if samlEntityID, ok := data["saml-entityid"]; !ok || samlEntityID == constant.EmptyString {
-		return nil, errSAMLEntityIDNotSet
+	if err := util.KeysExistAndNotEmptyOrErr(data, []string{"saml-entityid"}); err != nil {
+		return nil, err
 	}
 
 	return nil, nil

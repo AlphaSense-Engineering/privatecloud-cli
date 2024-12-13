@@ -3,30 +3,12 @@ package smtpchecker
 
 import (
 	"context"
-	"errors"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-)
-
-var (
-	// errUsernameNotSet is the error that the username is not set.
-	errUsernameNotSet = errors.New("username is not set")
-
-	// errPasswordNotSet is the error that the password is not set.
-	errPasswordNotSet = errors.New("password is not set")
-
-	// errAddressNotSet is the error that the address is not set.
-	errAddressNotSet = errors.New("address is not set")
-
-	// errHostNotSet is the error that the host is not set.
-	errHostNotSet = errors.New("host is not set")
-
-	// errPortNotSet is the error that the port is not set.
-	errPortNotSet = errors.New("port is not set")
 )
 
 // SMTPChecker is the type that contains the check functions for the SMTP.
@@ -45,6 +27,11 @@ func (c *SMTPChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	const (
 		// secretName is the name of the secret that contains the SMTP credentials.
 		secretName = "sender-smtp" // nolint:gosec
+
+		// secretAddressKey is the key of the address in the secret.
+		secretAddressKey = "address"
+		// secretHostKey is the key of the host in the secret.
+		secretHostKey = "host"
 	)
 
 	secret, err := c.clientset.CoreV1().Secrets(constant.NamespaceAlphaSense).Get(ctx, secretName, metav1.GetOptions{})
@@ -54,24 +41,14 @@ func (c *SMTPChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 
 	data := util.ConvertMap[string, []byte, string, string](secret.Data, util.Identity[string], util.ByteSliceToString)
 
-	if username, ok := data["username"]; !ok || username == constant.EmptyString {
-		return nil, errUsernameNotSet
-	}
-
-	if password, ok := data["password"]; !ok || password == constant.EmptyString {
-		return nil, errPasswordNotSet
-	}
-
-	if address, ok := data["address"]; !ok || address == constant.EmptyString {
-		return nil, errAddressNotSet
-	}
-
-	if host, ok := data["host"]; !ok || host == constant.EmptyString {
-		return nil, errHostNotSet
-	}
-
-	if port, ok := data["port"]; !ok || port == constant.EmptyString {
-		return nil, errPortNotSet
+	if err := util.KeysExistAndNotEmptyOrErr(data, []string{
+		constant.SecretUsernameKey,
+		constant.SecretPasswordKey,
+		secretAddressKey,
+		secretHostKey,
+		constant.SecretPortKey,
+	}); err != nil {
+		return nil, err
 	}
 
 	return nil, nil

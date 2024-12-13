@@ -8,7 +8,7 @@ import (
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
-	selferrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
+	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/k8s/kubeutil"
 	"github.com/charmbracelet/log"
@@ -250,7 +250,7 @@ func (c *GCPCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 	}
 
 	if len(missingPermissions) > 0 {
-		return nil, selferrors.NewRoleMissingPermissions(missingPermissions)
+		return nil, pkgerrors.NewRoleMissingPermissions(missingPermissions)
 	}
 
 	if err := clientsetPod.Delete(ctx, podName, metav1.DeleteOptions{}); err != nil {

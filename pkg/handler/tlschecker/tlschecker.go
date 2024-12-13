@@ -7,6 +7,7 @@ import (
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
+	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -35,7 +36,13 @@ func (c *TLSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, err
 	}
 
-	if _, err = tls.X509KeyPair(secret.Data[corev1.TLSCertKey], secret.Data[corev1.TLSPrivateKeyKey]); err != nil {
+	data := secret.Data
+
+	if err := util.KeysExistAndNotEmptyOrErr(data, []string{corev1.TLSCertKey, corev1.TLSPrivateKeyKey}); err != nil {
+		return nil, err
+	}
+
+	if _, err = tls.X509KeyPair(data[corev1.TLSCertKey], data[corev1.TLSPrivateKeyKey]); err != nil {
 		return nil, err
 	}
 

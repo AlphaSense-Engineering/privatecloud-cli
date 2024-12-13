@@ -32,6 +32,54 @@ func NewKeyExpectedGot(key, expected, got string) *KeyExpectedGot {
 	return &KeyExpectedGot{key: key, expected: expected, got: got}
 }
 
+// KeysEmpty is the error that is returned when the keys are empty.
+type KeysEmpty[K comparable] struct {
+	// keys is the list of keys that are empty.
+	keys []K
+}
+
+var _ error = &KeysEmpty[any]{}
+
+// Error is a function that returns the error message.
+func (e *KeysEmpty[K]) Error() string {
+	strKeys := make([]string, len(e.keys))
+
+	for i, key := range e.keys {
+		strKeys[i] = fmt.Sprintf("%v", key)
+	}
+
+	return fmt.Sprintf("keys empty: %s", strings.Join(strKeys, ", "))
+}
+
+// NewKeysEmpty is a function that returns a new KeysEmpty error.
+func NewKeysEmpty[K comparable](keys []K) error {
+	return &KeysEmpty[K]{keys: keys}
+}
+
+// KeysMissing is the error that is returned when the keys are missing.
+type KeysMissing[K comparable] struct {
+	// keys is the list of keys that are missing.
+	keys []K
+}
+
+var _ error = &KeysMissing[any]{}
+
+// Error is a function that returns the error message.
+func (e *KeysMissing[K]) Error() string {
+	strKeys := make([]string, len(e.keys))
+
+	for i, key := range e.keys {
+		strKeys[i] = fmt.Sprintf("%v", key)
+	}
+
+	return fmt.Sprintf("keys missing: %s", strings.Join(strKeys, ", "))
+}
+
+// NewKeysMissing is a function that returns a new KeysMissing error.
+func NewKeysMissing[K comparable](keys []K) error {
+	return &KeysMissing[K]{keys: keys}
+}
+
 // RoleMissingPermissions is the error that is returned when the role is missing permissions.
 type RoleMissingPermissions struct {
 	// missingPermissions is the list of missing permissions.

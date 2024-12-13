@@ -25,3 +25,14 @@ const (
 	// ServiceAccountNameGCP is the name of the service account for GCP.
 	ServiceAccountNameGCP = "gcp-provider-sa"
 )
+
+const (
+	// SecretUsernameKey is the key of the username in the secret.
+	SecretUsernameKey = "username"
+
+	// SecretPasswordKey is the key of the password in the secret.
+	SecretPasswordKey = "password"
+
+	// SecretPortKey is the key of the port in the secret.
+	SecretPortKey = "port"
+)
