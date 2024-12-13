@@ -29,6 +29,9 @@ import (
 )
 
 var (
+	// errFailedToEnsureNamespace is the error that is returned when the namespace cannot be ensured.
+	errFailedToEnsureNamespace = errors.New("failed to ensure Namespace")
+
 	// errFailedToCreateServiceAccount is the error that is returned when the service account cannot be created.
 	errFailedToCreateServiceAccount = errors.New("failed to create ServiceAccount")
 
@@ -105,10 +108,10 @@ type checkCmd struct {
 
 	// clientset is the Kubernetes clientset.
 	clientset *kubernetes.Clientset
-	// clientsetSA is the Kubernetes clientset for the ServiceAccount.
-	clientsetSA typedcorev1.ServiceAccountInterface
 	// clientsetNamespace is the Kubernetes clientset for the Namespace.
 	clientsetNamespace typedcorev1.NamespaceInterface
+	// clientsetSA is the Kubernetes clientset for the ServiceAccount.
+	clientsetSA typedcorev1.ServiceAccountInterface
 	// clientsetPod is the Kubernetes clientset for the Pod.
 	clientsetPod typedcorev1.PodInterface
 }
@@ -122,9 +125,9 @@ func (c *checkCmd) setupClientsets() (err error) {
 		return multierr.Combine(errFailedToCreateKubernetesClientset, err)
 	}
 
-	c.clientsetSA = c.clientset.CoreV1().ServiceAccounts(namespaceDefault)
-
 	c.clientsetNamespace = c.clientset.CoreV1().Namespaces()
+
+	c.clientsetSA = c.clientset.CoreV1().ServiceAccounts(namespaceDefault)
 
 	c.clientsetPod = c.clientset.CoreV1().Pods(namespaceDefault)
 
@@ -188,7 +191,6 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 	}
 
 	clusterPolicyRules := []rbacv1.PolicyRule{
-		{APIGroups: []string{constant.EmptyString}, Resources: []string{"namespaces"}, Verbs: []string{rbacv1.VerbAll}},
 		{APIGroups: []string{constant.EmptyString}, Resources: []string{"nodes"}, Verbs: []string{rbacv1.VerbAll}},
 	}
 
@@ -480,6 +482,9 @@ func (c *checkCmd) Run(_ *cobra.Command, args []string) {
 
 		// logMsgEnvConfigRead is the message that is logged when the environment configuration is read from the specified path.
 		logMsgEnvConfigRead = "read environment configuration from %s"
+
+		// logMsgNamespaceEnsured is the message that is logged when the namespace is ensured.
+		logMsgNamespaceEnsured = "ensured %s Namespace"
 	)
 
 	c.logger.Log(log.InfoLevel, logMsgInfraCheckStarted)
@@ -525,6 +530,16 @@ func (c *checkCmd) Run(_ *cobra.Command, args []string) {
 	}
 
 	c.logger.Log(log.InfoLevel, logMsgKubeClientsetCreated)
+
+	if _, err := c.clientsetNamespace.Create(ctx, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: constant.NamespaceCrossplane,
+		},
+	}, metav1.CreateOptions{}); err != nil && !k8serrors.IsAlreadyExists(err) {
+		c.logger.Fatal(multierr.Combine(errFailedToEnsureNamespace, err))
+	}
+
+	c.logger.Logf(log.InfoLevel, logMsgNamespaceEnsured, constant.NamespaceCrossplane)
 
 	if err = c.createServiceAccount(ctx, serviceAccountName); err != nil {
 		c.logger.Fatal(err)

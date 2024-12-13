@@ -35,9 +35,6 @@ var (
 	// errFailedToDecodeEnvConfig is the error that is returned when the envconfig data from the flag cannot be decoded.
 	errFailedToDecodeEnvConfig = errors.New("failed to decode envconfig")
 
-	// errFailedToEnsureNamespace is the error that is returned when the namespace cannot be ensured.
-	errFailedToEnsureNamespace = errors.New("failed to ensure Namespace")
-
 	// errFailedToEnsureServiceAccount is the error that is returned when the service account cannot be ensured.
 	errFailedToEnsureServiceAccount = errors.New("failed to ensure ServiceAccount")
 
@@ -66,9 +63,6 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 
 		// logMsgEnvConfigDecoded is the message that is logged when the environment configuration is decoded.
 		logMsgEnvConfigDecoded = "decoded environment configuration"
-
-		// logMsgNamespaceEnsured is the message that is logged when the namespace is ensured.
-		logMsgNamespaceEnsured = "ensured %s Namespace"
 
 		// logMsgServiceAccountEnsured is the message that is logged when the service account is ensured.
 		logMsgServiceAccountEnsured = "ensured %s/%s ServiceAccount"
@@ -115,16 +109,6 @@ func (c *podCmd) Run(_ *cobra.Command, _ []string) {
 	vcloud := cloud.Cloud(envConfig.Spec.CloudSpec.Provider)
 
 	ctx := context.Background()
-
-	if _, err := clientset.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: constant.NamespaceCrossplane,
-		},
-	}, metav1.CreateOptions{}); err != nil && !k8serrors.IsAlreadyExists(err) {
-		c.logger.Fatal(multierr.Combine(errFailedToEnsureNamespace, err))
-	}
-
-	c.logger.Logf(log.InfoLevel, logMsgNamespaceEnsured, constant.NamespaceCrossplane)
 
 	var serviceAccountName string
 
