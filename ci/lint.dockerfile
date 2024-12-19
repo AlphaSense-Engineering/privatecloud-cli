@@ -1,8 +1,8 @@
-FROM alpine:latest
+FROM golang:alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache git go npm yamllint
+RUN apk add --no-cache git npm yamllint
 RUN git config --global --add safe.directory /app
 
 RUN npm install -g @commitlint/cli @commitlint/config-conventional

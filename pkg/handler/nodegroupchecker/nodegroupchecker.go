@@ -15,14 +15,6 @@ var (
 	errNoNodesWithGPULabel = errors.New("no nodes with GPU label found")
 )
 
-const (
-	// LogMsgNodeGroupsChecked is the message that is logged when the node groups are checked.
-	LogMsgNodeGroupsChecked = "checked node groups"
-
-	// LogMsgNodeGroupsCheckedWithError is the message that is logged when the node groups are checked with an error.
-	LogMsgNodeGroupsCheckedWithError = "checked node groups; %s"
-)
-
 // NodeGroupChecker is the type that contains the node group check functions.
 type NodeGroupChecker struct {
 	// clientset is the Kubernetes client.
