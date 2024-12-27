@@ -203,7 +203,9 @@ func Test_validatePolicyDocument(t *testing.T) {
 
 			result := c.validatePolicyDocument(tc.document, tc.expectedDocument)
 
-			assert.Equal(t, tc.expected, result, "expected %v, got %v", tc.expected, result)
+			resultBool := len(result) == 0
+
+			assert.Equal(t, tc.expected, resultBool, "expected %v, got %v (%#v)", tc.expected, resultBool, result)
 		})
 	}
 }

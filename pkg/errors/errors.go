@@ -8,7 +8,28 @@ import (
 	"strings"
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
+	"github.com/r3labs/diff/v3"
 )
+
+// ErrWithChangelog is the error that is returned when there is an error and a changelog.
+type ErrWithChangelog struct {
+	// err is the error.
+	err error
+	// changelog is the changelog.
+	changelog diff.Changelog
+}
+
+var _ error = &ErrWithChangelog{}
+
+// Error is a function that returns the error message.
+func (e *ErrWithChangelog) Error() string {
+	return fmt.Errorf("%w: %#v", e.err, e.changelog).Error()
+}
+
+// NewErrWithChangelog is a function that returns a new ErrWithChangelog error.
+func NewErrWithChangelog(err error, changelog diff.Changelog) error {
+	return &ErrWithChangelog{err: err, changelog: changelog}
+}
 
 // KeyExpectedGot is the error that is returned when the key is expected to be a certain value, but it is not.
 type KeyExpectedGot struct {

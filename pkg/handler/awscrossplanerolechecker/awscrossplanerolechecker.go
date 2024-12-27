@@ -10,11 +10,13 @@ import (
 
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud/awscloudutil"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
+	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/charmbracelet/log"
+	"github.com/r3labs/diff/v3"
 )
 
 var (
@@ -261,123 +263,67 @@ func (c *AWSCrossplaneRoleChecker) fillPlaceholders(s string) string {
 	return s
 }
 
-// compareStringMaps is a function that compares two AWS string maps.
-func (c *AWSCrossplaneRoleChecker) compareStringMaps(stmtMap *map[string]*string, expectedMap *map[string]*string) bool {
-	if expectedMap == nil {
-		return true
-	}
-
-	if stmtMap == nil {
-		return false
-	}
-
-	stmtMapDerefed := *stmtMap
-
-	for key, value := range *expectedMap {
-		placeholderKey := c.fillPlaceholders(key)
-
-		if stmtValue, exists := stmtMapDerefed[placeholderKey]; !exists || util.Deref(stmtValue) != c.fillPlaceholders(util.Deref(value)) {
-			return false
-		}
-	}
-
-	return true
-}
-
-// compareStringSlices is a function that compares two AWS string slices.
-func (c *AWSCrossplaneRoleChecker) compareStringSlices(stmtSlice *[]*string, expectedSlice *[]*string) bool {
-	if expectedSlice == nil {
-		return true
-	}
-
-	if stmtSlice == nil {
-		return false
-	}
-
-	m := make(map[string]bool)
-
-	for _, str := range *stmtSlice {
-		if str == nil {
-			continue
-		}
-
-		m[util.Deref(str)] = true
-	}
-
-	for _, str := range *expectedSlice {
-		if str == nil {
-			continue
-		}
-
-		if !m[util.Deref(str)] {
-			return false
-		}
-	}
-
-	return true
-}
-
 // validatePolicyDocument is a function that validates the AWS policy document.
 //
 // nolint:gocognit
-func (c *AWSCrossplaneRoleChecker) validatePolicyDocument(document rolePolicyDocument, expectedDocument rolePolicyDocument) bool {
-	if util.Deref(document.Version) != util.Deref(expectedDocument.Version) {
-		return false
-	}
-
-	expectedStmtMap := make(map[string]*rolePolicyStatement)
+func (c *AWSCrossplaneRoleChecker) validatePolicyDocument(document rolePolicyDocument, expectedDocument rolePolicyDocument) diff.Changelog {
 	for _, stmt := range expectedDocument.Statement {
-		expectedStmtMap[util.Deref(stmt.SID)] = stmt
+		if stmt.Principal != nil && stmt.Principal.Federated != nil {
+			*stmt.Principal.Federated = c.fillPlaceholders(util.Deref(stmt.Principal.Federated))
+		}
+
+		if stmt.Resource != nil {
+			*stmt.Resource = c.fillPlaceholders(util.Deref(stmt.Resource))
+		}
+
+		if stmt.Condition != nil && stmt.Condition.StringLike != nil {
+			newStringLike := make(map[string]*string)
+
+			for key, value := range *stmt.Condition.StringLike {
+				newStringLike[c.fillPlaceholders(key)] = aws.String(c.fillPlaceholders(util.Deref(value)))
+			}
+
+			stmt.Condition.StringLike = &newStringLike
+		}
 	}
 
-	for _, stmt := range document.Statement {
-		expectedStmt, exists := expectedStmtMap[util.Deref(stmt.SID)]
-		if !exists {
+	changelog, err := diff.Diff(expectedDocument, document)
+	if err != nil {
+		panic(err)
+	}
+
+	const (
+		// desiredPathLength is the desired length of the path.
+		desiredPathLength = 4
+		// statementPath is the path to the statement.
+		statementPath = "Statement"
+		// statementPathIndex is the index of the statement path.
+		statementPathIndex = 0
+		// actionPath is the path to the action.
+		actionPath = "Action"
+		// notActionPath is the path to the not action.
+		notActionPath = "NotAction"
+		// actionNotActionPathIndex is the index of the action or not action path.
+		actionNotActionPathIndex = 2
+	)
+
+	// We need to allow extra items in Action/NotAction, and prohibit removing expected ones.
+	// This is why we filter out CREATE changelog entries that are in the Action/NotAction path.
+	filteredChangelog := changelog[:0]
+
+	for _, change := range changelog {
+		if change.Type == diff.CREATE && (len(change.Path) == desiredPathLength &&
+			change.Path[statementPathIndex] == statementPath &&
+			(change.Path[actionNotActionPathIndex] == actionPath || change.Path[actionNotActionPathIndex] == notActionPath)) {
 			continue
 		}
 
-		if expectedStmt.Condition != nil {
-			if stmt.Condition == nil {
-				return false
-			}
-
-			if !c.compareStringMaps(stmt.Condition.StringLike, expectedStmt.Condition.StringLike) {
-				return false
-			}
-		}
-
-		if util.Deref(stmt.Effect) != util.Deref(expectedStmt.Effect) {
-			return false
-		}
-
-		if !c.compareStringSlices(stmt.Action, expectedStmt.Action) {
-			return false
-		}
-
-		if !c.compareStringSlices(stmt.NotAction, expectedStmt.NotAction) {
-			return false
-		}
-
-		if expectedStmt.Principal != nil {
-			if stmt.Principal == nil {
-				return false
-			}
-
-			if util.Deref(stmt.Principal.Federated) != c.fillPlaceholders(util.Deref(expectedStmt.Principal.Federated)) {
-				return false
-			}
-		}
-
-		if util.Deref(stmt.Resource) != c.fillPlaceholders(util.Deref(expectedStmt.Resource)) {
-			return false
-		}
-
-		if util.Deref(stmt.SID) != util.Deref(expectedStmt.SID) {
-			return false
-		}
+		filteredChangelog = append(filteredChangelog, change)
 	}
 
-	return true
+	changelog = filteredChangelog
+
+	return changelog
 }
 
 // processPolicyDocument is a function that processes the AWS policy document.
@@ -429,8 +375,9 @@ func (c *AWSCrossplaneRoleChecker) processPolicyDocument(ctx context.Context, ro
 		return err
 	}
 
-	if !c.validatePolicyDocument(policyDocument, expectedPolicyDocument) {
-		return errPolicyDocumentMismatch
+	changelog := c.validatePolicyDocument(policyDocument, expectedPolicyDocument)
+	if len(changelog) > 0 {
+		return pkgerrors.NewErrWithChangelog(errPolicyDocumentMismatch, changelog)
 	}
 
 	return nil
@@ -469,8 +416,9 @@ func (c *AWSCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 		return nil, err
 	}
 
-	if !c.validatePolicyDocument(assumeRolePolicyDocument, constExpectedAssumeRolePolicyDocument) {
-		return nil, errAssumeRolePolicyDocumentMismatch
+	changelog := c.validatePolicyDocument(assumeRolePolicyDocument, constExpectedAssumeRolePolicyDocument)
+	if len(changelog) > 0 {
+		return nil, pkgerrors.NewErrWithChangelog(errAssumeRolePolicyDocumentMismatch, changelog)
 	}
 
 	for suffix, expectedPolicyDocument := range constExpectedPolicyDocuments {
