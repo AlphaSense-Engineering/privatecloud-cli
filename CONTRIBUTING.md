@@ -1,7 +1,11 @@
 # Contributing
 
-While contributions to the `privatecloud-installer` project are generally not expected, we appreciate any efforts to improve it. Here are some guidelines to
-help you get started if you wish to contribute.
+While contributions to this repository are generally not expected, AlphaSense Inc. may consider contributions that align with the project's goals and
+standards. Any potential contributors should contact AlphaSense Inc. for guidance and permission before proceeding.
+
+See [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-installer/blob/main/LICENSE.md) for more details.
+
+The information below is provided for informational purposes only. It is not an approval for any contributions.
 
 ## Local Development
 

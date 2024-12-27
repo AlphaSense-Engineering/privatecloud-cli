@@ -52,11 +52,14 @@ TBD
 
 ## Contributing
 
-While contributions to this project are generally not expected, we appreciate any efforts to improve it.
+While contributions to this repository are generally not expected, AlphaSense Inc. may consider contributions that align with the project's goals and
+standards. Any potential contributors should contact AlphaSense Inc. for guidance and permission before proceeding.
 
-If you would like to contribute, please make sure to take a look
-at [this guideline](https://github.com/AlphaSense-Engineering/privatecloud-installer/blob/main/CONTRIBUTING.md) beforehand.
+If you would like to contribute, please make sure to review both
+[LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-installer/blob/main/LICENSE.md) and
+[CONTRIBUTING.md](https://github.com/AlphaSense-Engineering/privatecloud-installer/blob/main/CONTRIBUTING.md) beforehand.
 
 ## License
 
-TBD
+**This repository is not Open Source.** See [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-installer/blob/main/LICENSE.md)
+for more details.
