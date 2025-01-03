@@ -230,3 +230,7 @@ markdownlint-cli2-sarif.sarif
 
 privatecloud-installer
 envconfig.yaml
+*step1*.yaml
+*step2*.yaml
+*step3*.yaml
+*secrets*.yaml

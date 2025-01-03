@@ -4,14 +4,23 @@ The `privatecloud-installer` is a tool designed to facilitate the installation o
 
 ## Prerequisites
 
-- Access to designated remote Kubernetes cluster on your chosen cloud provider via the `kubectl` CLI tool
-- If you prefer to compile the project from source, Go v1.22.6 or later must be installed
+- Access to a designated remote Kubernetes cluster on your chosen cloud provider via the `kubectl` CLI tool.
+- Ensure you have the necessary permissions to create the following resources in the cluster:
+  `ServiceAccount`, `Role`, `RoleBinding`, `ClusterRole`, `ClusterRoleBinding`, and `Pod`.
+- Ensure you have the necessary permissions to assign the following permissions to a `Role`:
+  - Access to `secrets` with all actions allowed, in the namespaces: `alphasense`, `crossplane`, `mysql`, and `platform`.
+  - Access to `pods` with all actions allowed, in the `crossplane` namespace.
+  - Access to `pods/log` with all actions allowed, in the `crossplane` namespace.
+  - Access to `serviceaccounts` with all actions allowed, in the `crossplane` namespace.
+  - Access to `serviceaccounts/token` with all actions allowed, in the `crossplane` namespace.
+- Ensure you have the necessary permissions to assign the following permissions to a `ClusterRole`:
+  - Access to `storageclasses` with all actions allowed, in the `storage.k8s.io` group.
+  - Access to `nodes` with all actions allowed, with no specific group.
+- If you prefer to compile the project from source, Go v1.23.4 or later must be installed.
 
 ## Installation
 
-### Pre-compiled Binaries
-
-TBD
+<!-- ### Pre-compiled Binaries -->
 
 ### Compiling from Source
 
@@ -48,7 +57,18 @@ The `<first_step_file>` should be replaced with the path to the first step YAML 
 
 ### Installation Command
 
-TBD
+The `install` command installs the AlphaSense Enterprise Kubernetes resources from the specified YAML files.
+
+```bash
+./privatecloud-installer install <context> <secrets_file> <first_step_file> <second_step_file> <third_step_file>
+```
+
+The `<context>` should be replaced with the name of the Kubernetes context to use for the installation.
+
+The `<secrets_file>` should be replaced with the path to the secrets YAML file in the installation process, such as `init_secrets.yaml`.
+
+The `<first_step_file>`, `<second_step_file>`, and `<third_step_file>` should be replaced with the path to the first, second, and third step YAML files in the
+installation process, such as `step1.yaml`, `step2.yaml`, and `step3.yaml`.
 
 ## Contributing
 

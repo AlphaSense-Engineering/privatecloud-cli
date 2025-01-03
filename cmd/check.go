@@ -191,6 +191,7 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 	}
 
 	clusterPolicyRules := []rbacv1.PolicyRule{
+		{APIGroups: []string{"storage.k8s.io"}, Resources: []string{"storageclasses"}, Verbs: []string{rbacv1.VerbAll}},
 		{APIGroups: []string{constant.EmptyString}, Resources: []string{"nodes"}, Verbs: []string{rbacv1.VerbAll}},
 	}
 
@@ -472,10 +473,10 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 	return nil
 }
 
-// Run is the run function for the Check command.
+// run is the run function for the Check command.
 //
 // nolint:funlen
-func (c *checkCmd) Run(_ *cobra.Command, args []string) {
+func (c *checkCmd) run(cobraCmd *cobra.Command, args []string) {
 	const (
 		// logMsgInfraCheckStarted is the message that is logged when the infrastructure check starts.
 		logMsgInfraCheckStarted = "started infrastructure check"
@@ -502,7 +503,7 @@ func (c *checkCmd) Run(_ *cobra.Command, args []string) {
 
 	var path string
 
-	c.kubeConfig, path, err = kubeutil.Config(util.Flag(c.cobraCmd, flagKubeConfig))
+	c.kubeConfig, path, err = kubeutil.Config(util.Flag(cobraCmd, flagKubeConfig))
 	if err != nil {
 		c.logger.Fatal(multierr.Combine(errFailedToGetKubeConfig, err))
 	}
@@ -521,7 +522,7 @@ func (c *checkCmd) Run(_ *cobra.Command, args []string) {
 		c.logger.Fatal(err)
 	}
 
-	if util.FlagBool(c.cobraCmd, flagCleanupOnly) {
+	if util.FlagBool(cobraCmd, flagCleanupOnly) {
 		if err = c.cleanupResources(ctx, roleBindingName, roleName, serviceAccountName, true); err != nil {
 			c.logger.Fatal(err)
 		}
@@ -571,33 +572,19 @@ func (c *checkCmd) Run(_ *cobra.Command, args []string) {
 	}
 }
 
-// newCheckCmd returns a new checkCmd.
-func newCheckCmd(logger *log.Logger, cobraCmd *cobra.Command) *checkCmd {
-	return &checkCmd{
-		logger:   logger,
-		cobraCmd: cobraCmd,
-	}
-}
-
-// Check returns a Cobra command to check the infrastructure.
-func Check(logger *log.Logger) *cobra.Command {
-	cobraCmd := &cobra.Command{
-		Use:   "check <first_step_file>",
-		Short: "Check the infrastructure",
-		Long: fmt.Sprintf(
-			`Check reviews the infrastructure in your cloud environment to ensure it is ready for deployment.
+func (c *checkCmd) longMsg(msg string) string {
+	return fmt.Sprintf(
+		`%s
 
 You may specify the Kubernetes configuration file to use by setting the --%s flag or by setting the KUBECONFIG environment variable.
 If you do not specify the Kubernetes configuration file, the command will use the default Kubernetes configuration file located at your home directory.`,
-			flagKubeConfig,
-		),
-		Args: cobra.ExactArgs(1),
-	}
+		msg,
+		flagKubeConfig,
+	)
+}
 
-	cmd := newCheckCmd(logger, cobraCmd)
-
-	cobraCmd.Run = cmd.Run
-
+// flags sets the flags for the Check command.
+func (c *checkCmd) flags(shouldAddCleanupOnlyFlag bool) {
 	const (
 		// defaultDockerRepo is the default repository to use for the pod image.
 		defaultDockerRepo = ""
@@ -608,17 +595,47 @@ If you do not specify the Kubernetes configuration file, the command will use th
 		defaultDockerImage = fmt.Sprintf("%s-pod:latest", constant.AppName)
 	)
 
-	cobraCmd.Flags().String(
+	c.cobraCmd.Flags().String(
 		flagKubeConfig,
 		constant.EmptyString,
 		"path to the Kubernetes configuration file to use for the check (or KUBECONFIG environment variable)",
 	)
 
-	cobraCmd.Flags().Bool(flagCleanupOnly, false, "only clean up the resources and exit")
+	if shouldAddCleanupOnlyFlag {
+		c.cobraCmd.Flags().Bool(flagCleanupOnly, false, "only clean up the resources and exit")
+	}
 
-	cobraCmd.Flags().String(flagDockerRepo, defaultDockerRepo, "the Docker repository to use for the Pod image")
-	cobraCmd.Flags().String(flagDockerImage, defaultDockerImage, "the Docker image to use for the Pod")
-	cobraCmd.Flags().String(flagImagePullSecret, constant.EmptyString, "the name of the image pull secret to use for the Pod")
+	c.cobraCmd.Flags().String(flagDockerRepo, defaultDockerRepo, "the Docker repository to use for the Pod image")
+	c.cobraCmd.Flags().String(flagDockerImage, defaultDockerImage, "the Docker image to use for the Pod")
+	c.cobraCmd.Flags().String(flagImagePullSecret, constant.EmptyString, "the name of the image pull secret to use for the Pod")
+}
+
+// newCheckCmd returns a new checkCmd.
+func newCheckCmd(logger *log.Logger, cobraCmd *cobra.Command) *checkCmd {
+	return &checkCmd{
+		logger:   logger,
+		cobraCmd: cobraCmd,
+	}
+}
+
+// Check returns a Cobra command to check the infrastructure.
+func Check(logger *log.Logger) *cobra.Command {
+	// argsCount is the number of arguments the command expects.
+	const argsCount = 1
+
+	cobraCmd := &cobra.Command{
+		Use:   "check <first_step_file>",
+		Short: "Check the infrastructure",
+		Args:  cobra.ExactArgs(argsCount),
+	}
+
+	cmd := newCheckCmd(logger, cobraCmd)
+
+	cobraCmd.Long = cmd.longMsg("Check reviews the infrastructure in your cloud environment to ensure it is ready for deployment.")
+
+	cobraCmd.Run = cmd.run
+
+	cmd.flags(true)
 
 	return cobraCmd
 }

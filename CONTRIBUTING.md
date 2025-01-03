@@ -12,7 +12,7 @@ The information below is provided for informational purposes only. It is not an 
 ### Prerequisites
 
 - Docker
-- Go v1.22.6 or later
+- Go v1.23.4 or later
 - Task aka Taskfile
 
 ### Setting Up
@@ -105,8 +105,8 @@ Here is a high-level overview of the process:
 
 1. The command first ensures that the necessary `crossplane` namespace exists in the cluster. If it does not, it creates it.
 
-2. The command creates the required **Role** and **RoleBinding** resources in the cluster. These resources define the permissions needed for the **Pod** to
-operate correctly.
+2. The command creates the required **ServiceAccount**, **Role**, **ClusterRole**, **RoleBinding**, and **ClusterRoleBinding** resources in the cluster.
+These resources define the permissions needed for the **Pod** to operate correctly.
 
 3. The command then creates a **Pod** in the cluster. This **Pod** uses a Docker image that contains the same binary as the `privatecloud-installer` but runs
 the `pod` command, specifically designed for the in-cluster check operation.
@@ -115,12 +115,24 @@ the `pod` command, specifically designed for the in-cluster check operation.
 
 5. Once the **Pod** is running, the command streams the logs from the **Pod** to provide real-time feedback on the in-cluster check operation.
 
-6. After the in-cluster check operation is complete, the command cleans up the resources it created, including the **Pod**, **Role**, and **RoleBinding**
-resources.
+6. After the in-cluster check operation is complete, the command cleans up all of the resources it created.
 
 The `check` command uses a **Pod** and a Docker image to utilize the same codebase while isolating the in-cluster check operation within a controlled
 environment in the Kubernetes cluster. This method ensures that the in-cluster check operation has the required permissions and environment to execute
 its tasks without needing any additional commands or permissions that would be necessary if run locally.
+
+### Installation Command
+
+The `install` command is designed to install the AlphaSense Enterprise Kubernetes resources from the specified YAML files.
+
+The command performs the following steps:
+
+1. The command runs the infrastructure check to ensure the cluster is ready for installation.
+
+2. The command sequentially applies the YAML files to the cluster. Step 1 file is applied twice to account for the resource mapping not being found on the first
+apply.
+
+3. The command waits for the phases to be completed.
 
 ## Styleguides
 
