@@ -31,6 +31,10 @@ tasks:
   check:
     cmds:
       - go run . check {{.CLI_ARGS}}
+
+  install:
+    cmds:
+      - go run . install {{.CLI_ARGS}}
   
   pod:
     cmds:

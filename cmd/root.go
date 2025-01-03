@@ -11,8 +11,8 @@ type rootCmd struct{}
 
 var _ cmd = &rootCmd{}
 
-// Run is the run function for the root command.
-func (c *rootCmd) Run(cmd *cobra.Command, _ []string) {
+// run is the run function for the root command.
+func (c *rootCmd) run(cmd *cobra.Command, _ []string) {
 	_ = cmd.Help()
 }
 
@@ -27,6 +27,6 @@ func Root() *cobra.Command {
 
 	return &cobra.Command{
 		Use: constant.AppName,
-		Run: cmd.Run,
+		Run: cmd.run,
 	}
 }

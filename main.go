@@ -8,6 +8,7 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
 	"github.com/charmbracelet/log"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/spf13/cobra"
 )
 
 // main is the entry point for the application.
@@ -19,9 +20,15 @@ func main() {
 
 	rootCmd := cmd.Root()
 
-	rootCmd.AddCommand(cmd.Check(logger))
+	cmdFns := []func(*log.Logger) *cobra.Command{
+		cmd.Check,
+		cmd.Install,
+		cmd.Pod,
+	}
 
-	rootCmd.AddCommand(cmd.Pod(logger))
+	for _, cmdFn := range cmdFns {
+		rootCmd.AddCommand(cmdFn(logger))
+	}
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

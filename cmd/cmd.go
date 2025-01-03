@@ -33,6 +33,6 @@ const (
 
 // cmd is the interface that all commands must implement.
 type cmd interface {
-	// Run is the run function for the command.
-	Run(*cobra.Command, []string)
+	// run is the run function for the command.
+	run(*cobra.Command, []string)
 }

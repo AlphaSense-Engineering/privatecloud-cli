@@ -74,6 +74,12 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 
 	region := c.envConfig.Spec.CloudSpec.CloudZone
 
+	// crossplaneNB is the note bene message for the Crossplane role check.
+	const crossplaneNB = "n.b. in AWS, the Crossplane role policy document is not being checked due to its structural aspects; " +
+		"instead, only the boundary policy document is checked"
+
+	c.logger.Log(log.InfoLevel, crossplaneNB)
+
 	for _, jwt := range jwts {
 		stsClient := sts.NewFromConfig(aws.Config{
 			Region: region,

@@ -53,10 +53,10 @@ type podCmd struct {
 
 var _ cmd = &podCmd{}
 
-// Run is the run function for the Pod command.
+// run is the run function for the Pod command.
 //
 // nolint:funlen
-func (c *podCmd) Run(_ *cobra.Command, _ []string) {
+func (c *podCmd) run(_ *cobra.Command, _ []string) {
 	const (
 		// logMsgPodStarted is the message that is logged when the pod starts.
 		logMsgPodStarted = "pod %s started"
@@ -199,7 +199,7 @@ func Pod(logger *log.Logger) *cobra.Command {
 When running this command, provide the environment configuration as a base64 encoded YAML file via the ENVCONFIG environment variable.
 
 You are not supposed to run this command manually, unless you know what you are doing.`,
-		Run:    cmd.Run,
+		Run:    cmd.run,
 		Hidden: true,
 	}
 }

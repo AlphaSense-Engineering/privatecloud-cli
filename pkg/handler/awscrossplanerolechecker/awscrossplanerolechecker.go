@@ -388,12 +388,6 @@ func (c *AWSCrossplaneRoleChecker) processPolicyDocument(ctx context.Context, ro
 // The arguments are not used.
 // It returns nothing on success, or an error on failure.
 func (c *AWSCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
-	// noteBeneMsg is the note bene message.
-	const noteBeneMsg = "n.b. in AWS, the Crossplane role policy document is not being checked due to its structural aspects; " +
-		"instead, only the boundary policy document is checked"
-
-	c.logger.Log(log.InfoLevel, noteBeneMsg)
-
 	roleName := awscloudutil.CrossplaneRoleName(c.envConfig.Spec.ClusterName)
 
 	role, err := c.iam.GetRole(ctx, &iam.GetRoleInput{RoleName: aws.String(roleName)})
