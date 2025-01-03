@@ -14,8 +14,8 @@ The `privatecloud-installer` is a tool designed to facilitate the installation o
   - Access to `serviceaccounts` with all actions allowed, in the `crossplane` namespace.
   - Access to `serviceaccounts/token` with all actions allowed, in the `crossplane` namespace.
 - Ensure you have the necessary permissions to assign the following permissions to a `ClusterRole`:
-  - Access to `storageclasses` with all actions allowed, in the `storage.k8s.io` group.
-  - Access to `nodes` with all actions allowed, with no specific group.
+  - Access to `storageclasses` in the `storage.k8s.io` group with all actions allowed.
+  - Access to `nodes` with all actions allowed.
 - If you prefer to compile the project from source, Go v1.23.4 or later must be installed.
 
 ## Installation
