@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/cloud"
 	"github.com/r3labs/diff/v3"
 )
 

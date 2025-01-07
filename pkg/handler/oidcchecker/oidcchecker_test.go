@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/cloud"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/envconfig"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 

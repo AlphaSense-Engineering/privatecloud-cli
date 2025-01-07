@@ -6,6 +6,6 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o privatecloud-installer .
+RUN go build -o privatecloud-cli .
 
-CMD ["./privatecloud-installer", "pod"]
+CMD ["./privatecloud-cli", "pod"]

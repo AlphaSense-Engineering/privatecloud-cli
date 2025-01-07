@@ -5,11 +5,11 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/db/mysqlutil"
-	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/db/mysqlutil"
+	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-cli/pkg/errors"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )

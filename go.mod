@@ -1,4 +1,4 @@
-module github.com/AlphaSense-Engineering/privatecloud-installer
+module github.com/AlphaSense-Engineering/privatecloud-cli
 
 go 1.23.4
 

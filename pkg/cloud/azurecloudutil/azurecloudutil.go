@@ -4,7 +4,7 @@ package azurecloudutil
 import (
 	"fmt"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/cloud"
 )
 
 // CrossplaneRoleName is a function that returns the name of the Crossplane role.

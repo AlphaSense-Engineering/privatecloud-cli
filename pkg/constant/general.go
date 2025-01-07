@@ -6,7 +6,7 @@ const ErrAssertionFailed = "assertion failed"
 
 const (
 	// AppName is the name of the application.
-	AppName = "privatecloud-installer"
+	AppName = "privatecloud-cli"
 
 	// EmptyString is the empty string.
 	EmptyString = ""

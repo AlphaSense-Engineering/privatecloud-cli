@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/util"
 	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 )

@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler"
 	"github.com/MicahParks/keyfunc/v3"
 	"github.com/golang-jwt/jwt/v5"
 )

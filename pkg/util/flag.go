@@ -4,7 +4,7 @@ package util
 import (
 	"strconv"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
 	"github.com/spf13/cobra"
 )
 

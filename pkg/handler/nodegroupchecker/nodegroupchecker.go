@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )

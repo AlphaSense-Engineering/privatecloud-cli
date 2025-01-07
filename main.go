@@ -4,8 +4,8 @@ package main
 import (
 	"os"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/cmd"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/cmd"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
 	"github.com/charmbracelet/log"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/spf13/cobra"
