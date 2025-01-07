@@ -83,5 +83,5 @@ If you would like to contribute, please make sure to review both
 
 ## License
 
-**This repository is not Open Source.** See [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md)
+**This publicly accessible Repository is not Open Source.** See [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md)
 for more details.
