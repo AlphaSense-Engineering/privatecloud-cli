@@ -12,17 +12,17 @@ tasks:
   
   ci-lint:
     cmds:
-      - docker image inspect privatecloud-installer-ci-lint:0.0.1 > /dev/null 2>&1 || docker build --platform=linux/amd64 -t privatecloud-installer-ci-lint:0.0.1 -f ./ci/lint.dockerfile .
-      - docker run --platform linux/amd64 --rm -v $(pwd):/app privatecloud-installer-ci-lint:0.0.1
+      - docker image inspect privatecloud-cli-ci-lint:0.0.1 > /dev/null 2>&1 || docker build --platform=linux/amd64 -t privatecloud-cli-ci-lint:0.0.1 -f ./ci/lint.dockerfile .
+      - docker run --platform linux/amd64 --rm -v $(pwd):/app privatecloud-cli-ci-lint:0.0.1
   
   ci-test:
     cmds:
-      - docker image inspect privatecloud-installer-ci-test:0.0.1 > /dev/null 2>&1 || docker build --platform=linux/amd64 -t privatecloud-installer-ci-test:0.0.1 -f ./ci/test.dockerfile .
-      - docker run --platform linux/amd64 --rm -v $(pwd):/app privatecloud-installer-ci-test:0.0.1
+      - docker image inspect privatecloud-cli-ci-test:0.0.1 > /dev/null 2>&1 || docker build --platform=linux/amd64 -t privatecloud-cli-ci-test:0.0.1 -f ./ci/test.dockerfile .
+      - docker run --platform linux/amd64 --rm -v $(pwd):/app privatecloud-cli-ci-test:0.0.1
 
   build:
     cmds:
-      - go build -o privatecloud-installer
+      - go build -o privatecloud-cli
 
   run:
     cmds:
@@ -42,4 +42,4 @@ tasks:
 
   pod-image-build:
     cmds:
-      - docker build --platform=linux/amd64 -t privatecloud-installer-pod:0.0.1 -f ./pod.dockerfile .
+      - docker build --platform=linux/amd64 -t privatecloud-cli-pod:0.0.1 -f ./pod.dockerfile .

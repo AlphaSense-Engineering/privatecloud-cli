@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud/azurecloudutil"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
-	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/cloud/azurecloudutil"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/envconfig"
+	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-cli/pkg/errors"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/util"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization"
 )
 

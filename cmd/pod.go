@@ -8,17 +8,17 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud/gcpcloudutil"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
-	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/awschecker"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/azurechecker"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/cloudchecker"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/gcpchecker"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/k8s/kubeutil"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/cloud"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/cloud/gcpcloudutil"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/envconfig"
+	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-cli/pkg/errors"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler/awschecker"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler/azurechecker"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler/cloudchecker"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler/gcpchecker"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/k8s/kubeutil"
 	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
@@ -194,7 +194,7 @@ func Pod(logger *log.Logger) *cobra.Command {
 	return &cobra.Command{
 		Use:   "pod",
 		Short: "Run the pod",
-		Long: `Pod checks the infrastructure of the cluster where it is running on before the installer can proceed.
+		Long: `Pod checks the infrastructure of the cluster where it is running on.
 
 When running this command, provide the environment configuration as a base64 encoded YAML file via the ENVCONFIG environment variable.
 

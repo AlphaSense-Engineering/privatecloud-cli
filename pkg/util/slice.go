@@ -1,7 +1,7 @@
 // Package util is the package that contains the utility functions.
 package util
 
-import "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
+import "github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
 
 // errSliceIsEmpty is the error message that occurs when the slice is empty.
 const errSliceIsEmpty = "slice is empty"

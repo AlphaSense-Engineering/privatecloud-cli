@@ -4,7 +4,7 @@ package awscrossplanerolechecker
 import (
 	"testing"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/envconfig"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/stretchr/testify/assert"
 )

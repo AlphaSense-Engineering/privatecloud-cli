@@ -4,7 +4,7 @@ package awscloudutil
 import (
 	"fmt"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/cloud"
 )
 
 // ARNType is the type of the ARN.

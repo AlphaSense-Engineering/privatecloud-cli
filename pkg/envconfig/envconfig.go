@@ -7,8 +7,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
-	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/cloud"
+	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-cli/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 

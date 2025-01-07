@@ -17,7 +17,7 @@ const (
 
 const (
 	// ServiceAccountNameAWS is the name of the service account for AWS.
-	ServiceAccountNameAWS = "aws-privatecloud-installer"
+	ServiceAccountNameAWS = "aws-privatecloud-cli"
 
 	// ServiceAccountNameAzure is the name of the service account for Azure.
 	ServiceAccountNameAzure = "azure-provider-sa"

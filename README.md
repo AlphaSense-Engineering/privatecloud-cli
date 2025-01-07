@@ -1,6 +1,6 @@
-# privatecloud-installer
+# privatecloud-cli
 
-The `privatecloud-installer` is a tool designed to facilitate the installation of AlphaSense Enterprise Intelligence Private Cloud environments.
+The `privatecloud-cli` is a tool designed to facilitate the management of AlphaSense Enterprise Intelligence Private Cloud environments.
 
 ## Prerequisites
 
@@ -29,28 +29,30 @@ If you prefer to compile the project from source, e.g. for security purposes, fo
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/AlphaSense-Engineering/privatecloud-installer.git
-    cd privatecloud-installer
+    git clone https://github.com/AlphaSense-Engineering/privatecloud-cli.git
+    cd privatecloud-cli
     ```
 
 2. Build the project:
 
     ```bash
-    go build -o privatecloud-installer
+    go build -o privatecloud-cli
     ```
 
 The binary will be created in the current directory.
 
 ## Usage
 
-The `privatecloud-installer` CLI tool allows you to install the Private Cloud and check the cluster's infrastructure and configuration prior to installation.
+Currently, the `privatecloud-cli` CLI tool allows you to install the Private Cloud and check the cluster's infrastructure and configuration prior to installation.
+
+See below for instructions on how to use the infrastructure check and installation commands.
 
 ### Infrastructure Check Command
 
 The `check` command checks the cluster's infrastructure and configuration prior to installation.
 
 ```bash
-./privatecloud-installer check <first_step_file>
+./privatecloud-cli check <first_step_file>
 ```
 
 The `<first_step_file>` should be replaced with the path to the first step YAML file in the installation process, such as `step1.yaml`.
@@ -60,7 +62,7 @@ The `<first_step_file>` should be replaced with the path to the first step YAML 
 The `install` command installs the AlphaSense Enterprise Kubernetes resources from the specified YAML files.
 
 ```bash
-./privatecloud-installer install <context> <secrets_file> <first_step_file> <second_step_file> <third_step_file>
+./privatecloud-cli install <context> <secrets_file> <first_step_file> <second_step_file> <third_step_file>
 ```
 
 The `<context>` should be replaced with the name of the Kubernetes context to use for the installation.
@@ -76,10 +78,10 @@ While contributions to this repository are generally not expected, AlphaSense In
 standards. Any potential contributors should contact AlphaSense Inc. for guidance and permission before proceeding.
 
 If you would like to contribute, please make sure to review both
-[LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-installer/blob/main/LICENSE.md) and
-[CONTRIBUTING.md](https://github.com/AlphaSense-Engineering/privatecloud-installer/blob/main/CONTRIBUTING.md) beforehand.
+[LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md) and
+[CONTRIBUTING.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/CONTRIBUTING.md) beforehand.
 
 ## License
 
-**This repository is not Open Source.** See [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-installer/blob/main/LICENSE.md)
+**This repository is not Open Source.** See [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md)
 for more details.

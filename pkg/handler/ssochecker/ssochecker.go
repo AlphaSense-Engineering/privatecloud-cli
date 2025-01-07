@@ -4,9 +4,9 @@ package ssochecker
 import (
 	"context"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/util"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )

@@ -4,7 +4,7 @@ package handler
 import (
 	"context"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
 )
 
 // Handler is the interface that contains the Handle function.

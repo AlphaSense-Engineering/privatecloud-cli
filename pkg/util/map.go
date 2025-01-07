@@ -4,7 +4,7 @@ package util
 import (
 	"reflect"
 
-	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-installer/pkg/errors"
+	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-cli/pkg/errors"
 	"go.uber.org/multierr"
 )
 

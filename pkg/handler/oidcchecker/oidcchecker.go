@@ -9,10 +9,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/cloud"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/cloud"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/envconfig"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler"
 )
 
 var (

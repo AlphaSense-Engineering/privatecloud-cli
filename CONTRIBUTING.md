@@ -3,7 +3,7 @@
 While contributions to this repository are generally not expected, AlphaSense Inc. may consider contributions that align with the project's goals and
 standards. Any potential contributors should contact AlphaSense Inc. for guidance and permission before proceeding.
 
-See [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-installer/blob/main/LICENSE.md) for more details.
+See [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md) for more details.
 
 The information below is provided for informational purposes only. It is not an approval for any contributions.
 
@@ -20,8 +20,8 @@ The information below is provided for informational purposes only. It is not an 
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/AlphaSense-Engineering/privatecloud-installer.git
-    cd privatecloud-installer
+    git clone https://github.com/AlphaSense-Engineering/privatecloud-cli.git
+    cd privatecloud-cli
     ```
 
 2. Install dependencies:
@@ -108,7 +108,7 @@ Here is a high-level overview of the process:
 2. The command creates the required **ServiceAccount**, **Role**, **ClusterRole**, **RoleBinding**, and **ClusterRoleBinding** resources in the cluster.
 These resources define the permissions needed for the **Pod** to operate correctly.
 
-3. The command then creates a **Pod** in the cluster. This **Pod** uses a Docker image that contains the same binary as the `privatecloud-installer` but runs
+3. The command then creates a **Pod** in the cluster. This **Pod** uses a Docker image that contains the same binary as the `privatecloud-cli` but runs
 the `pod` command, specifically designed for the in-cluster check operation.
 
 4. The **Pod** is started, and the command waits for it to reach the running state.

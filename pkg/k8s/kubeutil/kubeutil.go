@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/constant"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
 	"github.com/charmbracelet/log"
 	"go.uber.org/multierr"
 	corev1 "k8s.io/api/core/v1"

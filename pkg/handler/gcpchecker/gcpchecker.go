@@ -4,10 +4,10 @@ package gcpchecker
 import (
 	"context"
 
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/envconfig"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/crossplanerolechecker"
-	"github.com/AlphaSense-Engineering/privatecloud-installer/pkg/handler/gcpcrossplanerolechecker"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/envconfig"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler/crossplanerolechecker"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler/gcpcrossplanerolechecker"
 	"github.com/charmbracelet/log"
 	"k8s.io/client-go/kubernetes"
 )
