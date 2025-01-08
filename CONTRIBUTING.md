@@ -80,6 +80,14 @@ We use **Task** to manage development commands. The following commands are avail
 
     **N.B.** See available flags by running `task check -- -h`.
 
+  - **Running the Install Command:**
+  
+    ```bash
+    task install -- <context> <secrets_file> <first_step_file> <second_step_file> <third_step_file>
+    ```
+
+    **N.B.** See available flags by running `task install -- -h`.
+
   - **Running the Pod Command:**
   
     ```bash
