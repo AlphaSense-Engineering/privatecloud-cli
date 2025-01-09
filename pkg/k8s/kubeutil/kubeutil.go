@@ -133,7 +133,7 @@ func WaitForPodToSucceedOrFail(
 // PodLogs retrieves the pod logs.
 func PodLogs(ctx context.Context, logger *log.Logger, clientset kubernetes.Interface, namespace string, podName string) ([]string, error) {
 	// logMsgPodLogStreamRetrieved is the message that is logged when the pod log stream is retrieved.
-	const logMsgPodLogStreamRetrieved = "retrieved log stream for %s/%s Pod, printing..."
+	const logMsgPodLogStreamRetrieved = "retrieved log stream for %s/%s Pod..."
 
 	req := clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{})
 
