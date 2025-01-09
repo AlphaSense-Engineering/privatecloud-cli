@@ -18,13 +18,14 @@ import (
 // errKubectlNotAvailable is the error that is returned when kubectl is not available in PATH.
 var errKubectlNotAvailable = errors.New("kubectl is not available in PATH")
 
-const (
-	// logMsgSleeping is the message that is logged when sleeping for a given amount of time.
-	logMsgSleeping = "sleeping for %s"
+// logMsgSleeping is the message that is logged when sleeping for a given amount of time.
+const logMsgSleeping = "sleeping for %s"
 
-	// kubectlBin is the binary name for kubectl.
-	kubectlBin = "kubectl"
-)
+// flagForce is the name of the flag for the force flag.
+const flagForce = "force"
+
+// kubectlBin is the binary name for kubectl.
+const kubectlBin = "kubectl"
 
 var (
 	// constPhasesToWaitForWithCrossplane is the list of phases to wait for to proceed to the second step of the installation.
@@ -58,7 +59,7 @@ var _ cmd = &installCmd{}
 // run is the run function for the Install command.
 //
 // nolint:funlen
-func (c *installCmd) run(_ *cobra.Command, args []string) {
+func (c *installCmd) run(cobraCmd *cobra.Command, args []string) {
 	const (
 		// logMsgInstallationStarted is the message that is logged when the installation is started.
 		logMsgInstallationStarted = "installation started"
@@ -74,7 +75,9 @@ func (c *installCmd) run(_ *cobra.Command, args []string) {
 
 	firstStepFile := args[2]
 
-	c.checkCmd.run(c.cobraCmd, []string{firstStepFile})
+	if !util.FlagBool(cobraCmd, flagForce) {
+		c.checkCmd.run(cobraCmd, []string{firstStepFile})
+	}
 
 	if _, err := exec.LookPath(kubectlBin); err != nil {
 		c.logger.Fatal(errKubectlNotAvailable)
@@ -246,6 +249,8 @@ func Install(logger *log.Logger) *cobra.Command {
 	cobraCmd.Long = cmd.checkCmd.longMsg("Install installs AlphaSense Enterprise Kubernetes resources from the specified YAML files.")
 
 	cobraCmd.Run = cmd.run
+
+	cobraCmd.Flags().BoolP(flagForce, "f", false, "force the installation")
 
 	cmd.checkCmd.flags(false)
 
