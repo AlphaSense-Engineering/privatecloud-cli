@@ -74,14 +74,11 @@ installation process, such as `step1.yaml`, `step2.yaml`, and `step3.yaml`.
 
 ## Contributing
 
-While contributions to this repository are generally not expected, AlphaSense Inc. may consider contributions that align with the project's goals and
-standards. Any potential contributors should contact AlphaSense Inc. for guidance and permission before proceeding.
-
 If you would like to contribute, please make sure to review both
 [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md) and
 [CONTRIBUTING.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/CONTRIBUTING.md) beforehand.
 
 ## License
 
-**This publicly accessible Repository is not Open Source.** See [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md)
+**This publicly accessible repository is not Open Source.** See [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md)
 for more details.

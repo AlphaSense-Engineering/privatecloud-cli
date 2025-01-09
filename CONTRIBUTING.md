@@ -4,7 +4,8 @@ While contributions to the Software are generally not expected, AlphaSense Inc. 
 standards. Any potential contributors should contact AlphaSense Inc. for guidance and permission before proceeding. Contributions to the Software would
 be subject to the same terms and conditions as the rest of the Software, and the rights to the contributed Software would be transferred to AlphaSense Inc.
 
-See [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md) for more details.
+**This publicly accessible repository is not Open Source.** See [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md)
+for more details.
 
 The information below is provided for informational purposes only. It is not an approval for any contributions.
 

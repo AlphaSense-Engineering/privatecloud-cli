@@ -1,10 +1,12 @@
 # License
 
-The Repository is a public repository hosted on GitHub and can be found at the following URL:
-[https://github.com/AlphaSense-Engineering/privatecloud-cli](https://github.com/AlphaSense-Engineering/privatecloud-cli).
+The Repository is any repository hosted on GitHub that contains this License file and any other content included herein. The origin of the Repository is
+[https://github.com/AlphaSense-Engineering/privatecloud-cli](https://github.com/AlphaSense-Engineering/privatecloud-cli), but this License file may be
+included within other repositories as well, such as when the Repository is forked on GitHub. When this License file is included within another repository,
+the terms and conditions outlined in this document apply to the content of the Repository.
 
-**This publicly accessible Repository is not Open Source.** The License for the Repository grants AlphaSense Inc. all rights to any binaries, source code,
-documentation, or other content included herein (collectively referred to as the "Software").
+The License for the Repository grants AlphaSense Inc. all rights to any binaries, source code, documentation, or other content included herein,
+irrespective of what Repository the content is hosted in (collectively referred to as the "Software").
 
 The Repository may also contain third-party components, including their binaries, source code, documentation, or other content, which are subject to separate
 legal notices and terms (referred to as "Third-Party Content"). Your use of the Third-Party Content must comply with their respective terms, and
@@ -14,14 +16,16 @@ Your use of the Software is governed by the terms detailed in the License, that 
 [LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md) file of the Repository.
 
 Any redistribution, modification, or use of the Software without explicit written permission from AlphaSense Inc. is strictly prohibited and will result in
-immediate legal action, except for use of the Software for its intended purpose as outlined by AlphaSense Inc.
+immediate legal action, except for use of the Software for its intended purpose as outlined by AlphaSense Inc. This provision also extends to the content of
+the Repository that existed prior to the inclusion of this License file, as the Repository was not made publicly accessible before the addition of this
+License file.
 
 Prohibited actions include, but are not limited to:
 
 - Redistributing the Software in any form, such as binary, source code, or documentation, in whole or in part, across any medium, including physical,
   electronic, or digital platforms like GitHub or GitLab, including any forks or Internet-accessible clones of the Repository, with the exception of
   forks on GitHub that do not modify the Software in any way without the explicit written permission of AlphaSense Inc., and are not violating the terms of
-  the License.
+  the License, and are made publicly accessible.
 - Distributing any part of the Software as part of a software-as-a-service (SaaS) offering.
 - Modifying the Software in any manner.
 - Creating derivative works based on the Software.
@@ -30,10 +34,13 @@ Prohibited actions include, but are not limited to:
   [README.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/README.md) of the Repository.
 - Using the Software in ways that do not align with the best interests of AlphaSense Inc.
 
-AlphaSense Inc. reserves the right to update the License at any time without explicit approval from any contributors of the Software.
+AlphaSense Inc. reserves the right to update the License at any time without explicit approval from any contributors of the Software. The latest version of
+the License will be applicable to the content of the Repository, irregardless of whether the content was created prior to the update of the License.
 
 AlphaSense Inc. is not responsible for any damages or losses resulting from the use of the Software, including but not limited to any data loss, system
 failure, or other issues.
+
+AlphaSense Inc. is not obligated to provide any support, maintenance, or updates for the Software. You are solely responsible for the use of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR
 A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
@@ -48,5 +55,7 @@ to the Software.
 
 For inquiries regarding the Software, please contact AlphaSense Inc. directly. For up-to-date contact information, please see the
 [AlphaSense website](https://www.alpha-sense.com/contact/).
+
+If you do not agree to the terms and conditions outlined in this document, do not use the Software.
 
 Copyright 2024 AlphaSense Inc. All rights reserved.
