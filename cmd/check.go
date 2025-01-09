@@ -334,11 +334,11 @@ func (c *checkCmd) createPod(ctx context.Context, serviceAccountName string) err
 }
 
 // printPodLogs prints the pod logs.
-func (c *checkCmd) printPodLogs(ctx context.Context) error {
-	logs, err := kubeutil.PodLogs(ctx, c.logger, c.clientset, namespaceDefault, constant.AppName)
-	if err != nil {
-		return err
-	}
+func (c *checkCmd) printPodLogs(logs []string) error {
+	// logMsgPrintingPodLogs is the message that is logged when the pod logs are printed.
+	const logMsgPrintingPodLogs = "printing Pod logs..."
+
+	c.logger.Log(log.InfoLevel, logMsgPrintingPodLogs)
 
 	// logEntry is the struct that represents a log entry.
 	type logEntry struct {
@@ -558,16 +558,29 @@ func (c *checkCmd) run(cobraCmd *cobra.Command, args []string) {
 		c.logger.Fatal(err)
 	}
 
+	cleanup := func() {
+		if err := c.cleanupResources(ctx, roleBindingName, roleName, serviceAccountName, false); err != nil {
+			c.logger.Fatal(err)
+		}
+	}
+
 	_, err = kubeutil.WaitForPodToSucceedOrFail(ctx, c.logger, c.clientset, namespaceDefault, constant.AppName)
 	if err != nil {
+		cleanup()
+
 		c.logger.Fatal(err)
 	}
 
-	if err = c.printPodLogs(ctx); err != nil {
+	logs, err := kubeutil.PodLogs(ctx, c.logger, c.clientset, namespaceDefault, constant.AppName)
+	if err != nil {
+		cleanup()
+
 		c.logger.Fatal(err)
 	}
 
-	if err = c.cleanupResources(ctx, roleBindingName, roleName, serviceAccountName, false); err != nil {
+	cleanup()
+
+	if err = c.printPodLogs(logs); err != nil {
 		c.logger.Fatal(err)
 	}
 }
