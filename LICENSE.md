@@ -7,7 +7,7 @@ The Repository is a public repository hosted on GitHub and can be found at the f
 documentation, or other content included herein (collectively referred to as the "Software").
 
 The Repository may also contain third-party components, including their binaries, source code, documentation, or other content, which are subject to separate
-legal notices and terms (referred to as "Third-Party Content"). Your use of these Third-Party Content components must comply with their respective terms, and
+legal notices and terms (referred to as "Third-Party Content"). Your use of the Third-Party Content must comply with their respective terms, and
 AlphaSense Inc. is not responsible for ensuring such compliance.
 
 Your use of the Software is governed by the terms detailed in the License, that can be found in the
@@ -19,7 +19,9 @@ immediate legal action, except for use of the Software for its intended purpose 
 Prohibited actions include, but are not limited to:
 
 - Redistributing the Software in any form, such as binary, source code, or documentation, in whole or in part, across any medium, including physical,
-  electronic, or digital platforms like GitHub or GitLab, including any forks or Internet-accessible clones of the Repository.
+  electronic, or digital platforms like GitHub or GitLab, including any forks or Internet-accessible clones of the Repository, with the exception of
+  forks on GitHub that do not modify the Software in any way without the explicit written permission of AlphaSense Inc., and are not violating the terms of
+  the License.
 - Distributing any part of the Software as part of a software-as-a-service (SaaS) offering.
 - Modifying the Software in any manner.
 - Creating derivative works based on the Software.
