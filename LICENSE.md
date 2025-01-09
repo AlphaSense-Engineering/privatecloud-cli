@@ -8,7 +8,7 @@ the terms and conditions outlined in this document apply to the content of the R
 The License for the Repository grants AlphaSense Inc. all rights to any binaries, source code, documentation, or other content included herein,
 irrespective of what Repository the content is hosted in (collectively referred to as the "Software").
 
-The Repository may also contain third-party components, including their binaries, source code, documentation, or other content, which are subject to separate
+The Software may also contain third-party components, including their binaries, source code, documentation, or other content, which are subject to separate
 legal notices and terms (referred to as "Third-Party Content"). Your use of the Third-Party Content must comply with their respective terms, and
 AlphaSense Inc. is not responsible for ensuring such compliance.
 
@@ -35,7 +35,7 @@ Prohibited actions include, but are not limited to:
 - Using the Software in ways that do not align with the best interests of AlphaSense Inc.
 
 AlphaSense Inc. reserves the right to update the License at any time without explicit approval from any contributors of the Software. The latest version of
-the License will be applicable to the content of the Repository, irregardless of whether the content was created prior to the update of the License.
+the License will be applicable to all versions of the Software, whether they were created prior to the update of the License or not.
 
 AlphaSense Inc. is not responsible for any damages or losses resulting from the use of the Software, including but not limited to any data loss, system
 failure, or other issues.
