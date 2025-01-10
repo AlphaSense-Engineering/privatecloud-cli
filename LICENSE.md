@@ -12,8 +12,8 @@ The Software may also contain third-party components, including their binaries, 
 legal notices and terms (referred to as "Third-Party Content"). Your use of the Third-Party Content must comply with their respective terms, and
 AlphaSense Inc. is not responsible for ensuring such compliance.
 
-Your use of the Software is governed by the terms detailed in the License, that can be found in the
-[LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md) file of the Repository.
+Your use of the Software is governed by the terms detailed in the License, that can be found at
+[https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md).
 
 Any redistribution, modification, or use of the Software without explicit written permission from AlphaSense Inc. is strictly prohibited and will result in
 immediate legal action, except for use of the Software for its intended purpose as outlined by AlphaSense Inc. This provision also extends to the content of
@@ -30,8 +30,8 @@ Prohibited actions include, but are not limited to:
 - Modifying the Software in any manner.
 - Creating derivative works based on the Software.
 - Attempting to reverse engineer the Software.
-- Using the Software for purposes other than its original intent, as outlined in the
-  [README.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/README.md) of the Repository.
+- Using the Software for purposes other than its original intent, as outlined at
+  [https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/README.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/README.md).
 - Using the Software in ways that do not align with the best interests of AlphaSense Inc.
 
 AlphaSense Inc. reserves the right to update the License at any time without explicit approval from any contributors of the Software. The latest version of
