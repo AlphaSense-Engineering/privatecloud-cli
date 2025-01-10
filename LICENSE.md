@@ -35,7 +35,9 @@ Prohibited actions include, but are not limited to:
 - Using the Software in ways that do not align with the best interests of AlphaSense Inc.
 
 AlphaSense Inc. reserves the right to update the License at any time without explicit approval from any contributors of the Software. The latest version of
-the License will be applicable to all versions of the Software, whether they were created prior to the update of the License or not.
+the License will be applicable to all versions of the Software, hosted in any Repository, whether they were created prior to the update of the License or not.
+The latest version of the License will always be available at
+[https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md](https://github.com/AlphaSense-Engineering/privatecloud-cli/blob/main/LICENSE.md).
 
 AlphaSense Inc. is not responsible for any damages or losses resulting from the use of the Software, including but not limited to any data loss, system
 failure, or other issues.
