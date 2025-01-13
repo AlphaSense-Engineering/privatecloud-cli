@@ -21,8 +21,13 @@ var errKubectlNotAvailable = errors.New("kubectl is not available in PATH")
 // logMsgSleeping is the message that is logged when sleeping for a given amount of time.
 const logMsgSleeping = "sleeping for %s"
 
-// flagForce is the name of the flag for the force flag.
-const flagForce = "force"
+const (
+	// flagForce is the name of the flag for the force flag.
+	flagForce = "force"
+
+	// flagForceShort is the short name of the flag for the force flag.
+	flagForceShort = "f"
+)
 
 // kubectlBin is the binary name for kubectl.
 const kubectlBin = "kubectl"
@@ -250,7 +255,7 @@ func Install(logger *log.Logger) *cobra.Command {
 
 	cobraCmd.Run = cmd.run
 
-	cobraCmd.Flags().BoolP(flagForce, "f", false, "force the installation")
+	cobraCmd.Flags().BoolP(flagForce, flagForceShort, false, "force the installation")
 
 	cmd.checkCmd.flags(false)
 
