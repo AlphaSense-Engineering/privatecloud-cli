@@ -18,16 +18,16 @@ func Exec(l *log.Logger, outBuf *bytes.Buffer, bin string, args ...string) error
 	var writer io.Writer
 
 	if outBuf != nil {
-		writer = io.MultiWriter(&LogInfoWriter{Logger: l}, outBuf)
+		writer = io.MultiWriter(&LogDebugWriter{Logger: l}, outBuf)
 	} else {
-		writer = &LogInfoWriter{Logger: l}
+		writer = &LogDebugWriter{Logger: l}
 	}
 
 	cmd.Stdout = writer
 
 	cmd.Stderr = &LogErrorWriter{Logger: l}
 
-	l.Logf(log.InfoLevel, logMsgRunningCommand, cmd.String())
+	l.Debugf(logMsgRunningCommand, cmd.String())
 
 	return cmd.Run()
 }

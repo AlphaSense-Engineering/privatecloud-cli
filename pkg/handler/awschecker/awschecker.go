@@ -64,13 +64,13 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, multierr.Combine(jwtretriever.ErrFailedToRetrieveJWTs, err)
 	}
 
-	c.logger.Log(log.InfoLevel, jwtretriever.LogMsgJWTsRetrieved)
+	c.logger.Debug(jwtretriever.LogMsgJWTsRetrieved)
 
 	if _, err := c.jwtChecker.Handle(ctx, jwts); err != nil {
 		return nil, multierr.Combine(jwtchecker.ErrFailedToCheckJWTs, err)
 	}
 
-	c.logger.Log(log.InfoLevel, jwtchecker.LogMsgJWTsChecked)
+	c.logger.Debug(jwtchecker.LogMsgJWTsChecked)
 
 	region := c.envConfig.Spec.CloudSpec.CloudZone
 
@@ -78,7 +78,7 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	const crossplaneNB = "n.b. in AWS, the Crossplane role policy document is not being checked due to its structural aspects; " +
 		"instead, only the boundary policy document is checked"
 
-	c.logger.Log(log.InfoLevel, crossplaneNB)
+	c.logger.Info(crossplaneNB)
 
 	for _, jwt := range jwts {
 		stsClient := sts.NewFromConfig(aws.Config{
@@ -120,7 +120,7 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, multierr.Combine(crossplanerolechecker.ErrFailedToCheckCrossplaneRole, err)
 	}
 
-	c.logger.Log(log.InfoLevel, crossplanerolechecker.LogMsgCrossplaneRoleChecked)
+	c.logger.Info(crossplanerolechecker.LogMsgCrossplaneRoleChecked)
 
 	return nil, nil
 }
