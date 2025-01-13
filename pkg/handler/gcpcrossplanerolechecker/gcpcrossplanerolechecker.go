@@ -198,7 +198,7 @@ func (c *GCPCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 			return nil, err
 		}
 
-		c.logger.Logf(log.InfoLevel, constant.LogMsgPodDeleted, constant.NamespaceCrossplane, podName)
+		c.logger.Debugf(constant.LogMsgPodDeleted, constant.NamespaceCrossplane, podName)
 	} else if !k8serrors.IsNotFound(err) {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func (c *GCPCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 		return nil, err
 	}
 
-	c.logger.Logf(log.InfoLevel, constant.LogMsgPodCreated, constant.NamespaceCrossplane, podName)
+	c.logger.Debugf(constant.LogMsgPodCreated, constant.NamespaceCrossplane, podName)
 
 	phase, err := kubeutil.WaitForPodToSucceedOrFail(ctx, c.logger, c.clientset, constant.NamespaceCrossplane, podName)
 	if err != nil {
@@ -257,7 +257,7 @@ func (c *GCPCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 		return nil, err
 	}
 
-	c.logger.Logf(log.InfoLevel, constant.LogMsgPodDeleted, constant.NamespaceCrossplane, podName)
+	c.logger.Debugf(constant.LogMsgPodDeleted, constant.NamespaceCrossplane, podName)
 
 	return nil, nil
 }

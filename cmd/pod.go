@@ -41,6 +41,9 @@ var (
 	// errJWKSURIRequired is an error that occurs when the JWKS URI is required.
 	errJWKSURIRequired = errors.New("jwks URI is required")
 
+	// errUnknownError is the error that is returned when the error is unknown.
+	errUnknownError = errors.New("unknown error")
+
 	// errFailedToCheckInfrastructure is the error that is returned when the infrastructure check fails.
 	errFailedToCheckInfrastructure = errors.New("failed to check infrastructure")
 )
@@ -53,9 +56,25 @@ type podCmd struct {
 
 var _ cmd = &podCmd{}
 
+func (c *podCmd) logRelatedDocumentation(docs ...string) {
+	const (
+		// logMsgRelatedDocumentation is the message that is logged when the related documentation resources are logged.
+		logMsgRelatedDocumentation = "related documentation resources:"
+
+		// logMsgRelatedDocumentationListPrefix is the prefix that is used when the list of documentation resources is logged.
+		logMsgRelatedDocumentationListPrefix = "  - "
+	)
+
+	c.logger.Info(logMsgRelatedDocumentation)
+
+	for _, doc := range docs {
+		c.logger.Infof("%s%s", logMsgRelatedDocumentationListPrefix, doc)
+	}
+}
+
 // run is the run function for the Pod command.
 //
-// nolint:funlen
+// nolint:funlen,gocognit
 func (c *podCmd) run(_ *cobra.Command, _ []string) {
 	const (
 		// logMsgPodStarted is the message that is logged when the pod starts.
@@ -71,9 +90,43 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 		logMsgInfraCheckCompletedSuccessfully = "infrastructure check completed successfully"
 	)
 
+	const (
+		// docsPersistentVolumes is the URL to the documentation for persistent volumes.
+		docsPersistentVolumes = "https://developer.alpha-sense.com/enterprise/technical-requirements/#persistent-volumes"
+
+		// docsMySQLDatabaseCluster is the URL to the documentation for MySQL database cluster.
+		docsMySQLDatabaseCluster = "https://developer.alpha-sense.com/enterprise/technical-requirements/#mysql-database-cluster"
+
+		// docsMySQLSecrets is the URL to the documentation for MySQL secrets.
+		//
+		// nolint:gosec
+		docsMySQLSecrets = "https://developer.alpha-sense.com/enterprise/technical-requirements/#mysql-secrets"
+
+		// docsTLSSecrets is the URL to the documentation for TLS secrets.
+		//
+		// nolint:gosec
+		docsTLSSecrets = "https://developer.alpha-sense.com/enterprise/technical-requirements/#tls-secrets"
+
+		// docsSMTPSecrets is the URL to the documentation for SMTP secrets.
+		//
+		// nolint:gosec
+		docsSMTPSecrets = "https://developer.alpha-sense.com/enterprise/technical-requirements/#smtp-credentials-for-email-sending"
+
+		// docsSSOSecrets is the URL to the documentation for SSO secrets.
+		//
+		// nolint:gosec
+		docsSSOSecrets = "https://developer.alpha-sense.com/enterprise/technical-requirements/#sso-secret"
+
+		// docsAWSOIDC is the URL to the documentation for AWS OIDC.
+		docsAWSOIDC = "https://developer.alpha-sense.com/enterprise/technical-requirements/aws#oidc-provider-for-iam-role-for-service-account"
+
+		// docsAzureCrossplaneMI is the URL to the documentation for Azure Crossplane Managed Identity.
+		docsAzureCrossplaneMI = "https://developer.alpha-sense.com/enterprise/technical-requirements/azure#crossplane-managed-identity"
+	)
+
 	c.logger.SetFormatter(log.JSONFormatter)
 
-	c.logger.Logf(log.InfoLevel, logMsgPodStarted, constant.AppName)
+	c.logger.Debugf(logMsgPodStarted, constant.AppName)
 
 	envConfigBase64 := os.Getenv(envVarEnvConfig)
 	if envConfigBase64 == constant.EmptyString {
@@ -90,21 +143,21 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 		c.logger.Fatal(multierr.Combine(errFailedToReadEnvConfig, err))
 	}
 
-	c.logger.Log(log.InfoLevel, logMsgEnvConfigDecoded)
+	c.logger.Debug(logMsgEnvConfigDecoded)
 
 	kubeConfig, path, err := kubeutil.Config(constant.EmptyString)
 	if err != nil {
 		c.logger.Fatal(multierr.Combine(errFailedToGetKubeConfig, err))
 	}
 
-	c.logger.Logf(log.InfoLevel, logMsgKubeLoadedConfig, path)
+	c.logger.Debugf(logMsgKubeLoadedConfig, path)
 
 	clientset, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		c.logger.Fatal(multierr.Combine(errFailedToCreateKubernetesClientset, err))
 	}
 
-	c.logger.Log(log.InfoLevel, logMsgKubeClientsetCreated)
+	c.logger.Debug(logMsgKubeClientsetCreated)
 
 	vcloud := cloud.Cloud(envConfig.Spec.CloudSpec.Provider)
 
@@ -131,7 +184,7 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 
 	if vcloud == cloud.GCP {
 		sa.ObjectMeta.Annotations = map[string]string{
-			"iam.gke.io/gcp-service-account": gcpcloudutil.ServiceAccountAnnotation(envConfig.Spec.ClusterName, envConfig.Spec.CloudSpec.GCP.ProjectID),
+			gcpcloudutil.ServiceAccountAnnotationKey: gcpcloudutil.ServiceAccountAnnotation(envConfig.Spec.ClusterName, envConfig.Spec.CloudSpec.GCP.ProjectID),
 		}
 	}
 
@@ -141,17 +194,44 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 		c.logger.Fatal(multierr.Combine(errFailedToEnsureServiceAccount, err))
 	}
 
-	c.logger.Logf(log.InfoLevel, logMsgServiceAccountEnsured, constant.NamespaceCrossplane, serviceAccountName)
+	c.logger.Debugf(logMsgServiceAccountEnsured, constant.NamespaceCrossplane, serviceAccountName)
 
 	httpClient := http.DefaultClient
 
-	cloudChecker := cloudchecker.New(c.logger, vcloud, envConfig, clientset, httpClient)
+	checker := cloudchecker.New(c.logger, vcloud, envConfig, clientset, httpClient)
 
 	var jwksURI *string
 
-	rawJWKSURI, err := cloudChecker.Handle(ctx)
-	if err != nil {
-		c.logger.Fatal(multierr.Combine(errFailedToCheckInfrastructure, err))
+	rawJWKSURI, err := checker.Handle(ctx)
+	if err != nil { // nolint:nestif
+		// We don't use c.logger.Fatal() as it will exit the program immediately, and we want to output additional information after logging the fatal error.
+		c.logger.Log(log.FatalLevel, multierr.Combine(errFailedToCheckInfrastructure, err))
+
+		docMap := map[error][]string{
+			cloudchecker.ErrFailedToCheckStorageClass: {docsPersistentVolumes},
+			cloudchecker.ErrFailedToCheckMySQL:        {docsMySQLDatabaseCluster, docsMySQLSecrets},
+			cloudchecker.ErrFailedToCheckTLS:          {docsTLSSecrets},
+			cloudchecker.ErrFailedToCheckSMTP:         {docsSMTPSecrets},
+			cloudchecker.ErrFailedToCheckSSO:          {docsSSOSecrets},
+			cloudchecker.ErrFailedToCheckOIDCURL:      {}, // Special case, docs per cloud provider.
+		}
+
+		// nolint:errorlint
+		if _, exists := docMap[err]; !exists {
+			c.logger.Fatal(errUnknownError)
+		}
+
+		if docs, exists := docMap[err]; exists {
+			c.logRelatedDocumentation(docs...)
+		} else if err == cloudchecker.ErrFailedToCheckOIDCURL { // nolint:errorlint
+			if vcloud == cloud.AWS {
+				c.logRelatedDocumentation(docsAWSOIDC)
+			} else if vcloud == cloud.Azure {
+				c.logRelatedDocumentation(docsAzureCrossplaneMI)
+			}
+		}
+
+		os.Exit(1)
 	}
 
 	if rawJWKSURI != nil {
@@ -177,7 +257,7 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 		c.logger.Fatal(multierr.Combine(errFailedToCheckInfrastructure, err))
 	}
 
-	c.logger.Log(log.InfoLevel, logMsgInfraCheckCompletedSuccessfully)
+	c.logger.Info(logMsgInfraCheckCompletedSuccessfully)
 }
 
 // newPodCmd returns a new podCmd.

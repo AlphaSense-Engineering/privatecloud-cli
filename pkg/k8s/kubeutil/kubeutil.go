@@ -102,7 +102,7 @@ func WaitForPodToSucceedOrFail(
 		logMsgPodFailed = "%s/%s Pod failed"
 	)
 
-	logger.Logf(log.InfoLevel, logMsgPodWaitingToSucceedOrFail, namespace, podName)
+	logger.Debugf(logMsgPodWaitingToSucceedOrFail, namespace, podName)
 
 	var pod *corev1.Pod
 
@@ -115,11 +115,11 @@ func WaitForPodToSucceedOrFail(
 		phase = pod.Status.Phase
 
 		if phase == corev1.PodSucceeded {
-			logger.Logf(log.InfoLevel, logMsgPodSucceeded, namespace, podName)
+			logger.Debugf(logMsgPodSucceeded, namespace, podName)
 
 			break
 		} else if phase == corev1.PodFailed {
-			logger.Logf(log.ErrorLevel, logMsgPodFailed, namespace, podName)
+			logger.Debugf(logMsgPodFailed, namespace, podName)
 
 			break
 		}
@@ -143,7 +143,7 @@ func PodLogs(ctx context.Context, logger *log.Logger, clientset kubernetes.Inter
 	}
 	defer podLogStream.Close() // nolint:errcheck
 
-	logger.Logf(log.InfoLevel, logMsgPodLogStreamRetrieved, namespace, podName)
+	logger.Debugf(logMsgPodLogStreamRetrieved, namespace, podName)
 
 	var logLines []string
 

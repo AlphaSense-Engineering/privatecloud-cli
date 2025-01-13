@@ -6,6 +6,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	// FlagVerbose is the flag to enable verbose output.
+	FlagVerbose = "verbose"
+
+	// flagVerboseShort is the short flag to enable verbose output.
+	flagVerboseShort = "v"
+)
+
 // rootCmd is the root command for the application.
 type rootCmd struct{}
 
@@ -25,8 +33,12 @@ func newRootCmd() *rootCmd {
 func Root() *cobra.Command {
 	cmd := newRootCmd()
 
-	return &cobra.Command{
+	cobraCmd := &cobra.Command{
 		Use: constant.AppName,
 		Run: cmd.run,
 	}
+
+	cobraCmd.PersistentFlags().BoolP(FlagVerbose, flagVerboseShort, false, "verbose output")
+
+	return cobraCmd
 }

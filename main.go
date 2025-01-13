@@ -6,10 +6,28 @@ import (
 
 	"github.com/AlphaSense-Engineering/privatecloud-cli/cmd"
 	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/util"
 	"github.com/charmbracelet/log"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/spf13/cobra"
 )
+
+// addCommand is the function that adds a command to the root command and hooks its Run function.
+func addCommand(logger *log.Logger, rootCmd *cobra.Command, cmdFn func(*log.Logger) *cobra.Command) {
+	cobraCmd := cmdFn(logger)
+
+	oldRun := cobraCmd.Run
+
+	cobraCmd.Run = func(cobraCmd *cobra.Command, args []string) {
+		if util.FlagBool(cobraCmd, cmd.FlagVerbose) {
+			logger.SetLevel(log.DebugLevel)
+		}
+
+		oldRun(cobraCmd, args)
+	}
+
+	rootCmd.AddCommand(cobraCmd)
+}
 
 // main is the entry point for the application.
 func main() {
@@ -27,7 +45,7 @@ func main() {
 	}
 
 	for _, cmdFn := range cmdFns {
-		rootCmd.AddCommand(cmdFn(logger))
+		addCommand(logger, rootCmd, cmdFn)
 	}
 
 	if err := rootCmd.Execute(); err != nil {

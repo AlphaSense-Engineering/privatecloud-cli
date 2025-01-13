@@ -6,36 +6,36 @@ import (
 
 	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
+
+// flagVal returns the value of the flag as a string, or an empty string if the flag is not set.
+func flagVal(flag *pflag.Flag) string {
+	if flag == nil || flag.Value == nil {
+		return constant.EmptyString
+	}
+
+	return flag.Value.String()
+}
 
 // Flag returns the value of the flag as a string, or an empty string if the flag is not set.
 func Flag(cmd *cobra.Command, name string) string {
-	flag := cmd.Flag(name)
-	if flag == nil {
-		return constant.EmptyString
-	}
+	return flagVal(cmd.Flag(name))
+}
 
-	value := flag.Value
-	if value == nil {
-		return constant.EmptyString
-	}
-
-	return value.String()
+// PersistentFlag returns the value of the persistent flag as a string, or an empty string if the flag is not set.
+func PersistentFlag(cmd *cobra.Command, name string) string {
+	return flagVal(cmd.PersistentFlags().Lookup(name))
 }
 
 // FlagBool returns the value of the flag as a bool, or false if the flag is not set.
 func FlagBool(cmd *cobra.Command, name string) bool {
-	flag := cmd.Flag(name)
-	if flag == nil {
+	val := flagVal(cmd.Flag(name))
+	if val == constant.EmptyString {
 		return false
 	}
 
-	value := flag.Value
-	if value == nil {
-		return false
-	}
-
-	boolValue, err := strconv.ParseBool(value.String())
+	boolValue, err := strconv.ParseBool(val)
 	if err != nil {
 		return false
 	}

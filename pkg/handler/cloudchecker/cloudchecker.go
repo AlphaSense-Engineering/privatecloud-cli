@@ -23,23 +23,23 @@ import (
 )
 
 var (
-	// errFailedToCheckStorageClass is the error that occurs when the storage class is not checked.
-	errFailedToCheckStorageClass = errors.New("failed to check storage class")
+	// ErrFailedToCheckStorageClass is the error that occurs when the storage class is not checked.
+	ErrFailedToCheckStorageClass = errors.New("failed to check storage class")
 
-	// errFailedToCheckMySQL is the error that occurs when the MySQL is not checked.
-	errFailedToCheckMySQL = errors.New("failed to check MySQL")
+	// ErrFailedToCheckMySQL is the error that occurs when the MySQL is not checked.
+	ErrFailedToCheckMySQL = errors.New("failed to check MySQL")
 
-	// errFailedToCheckTLS is the error that occurs when the TLS is not checked.
-	errFailedToCheckTLS = errors.New("failed to check TLS")
+	// ErrFailedToCheckTLS is the error that occurs when the TLS is not checked.
+	ErrFailedToCheckTLS = errors.New("failed to check TLS")
 
-	// errFailedToCheckSMTP is the error that occurs when the SMTP is not checked.
-	errFailedToCheckSMTP = errors.New("failed to check SMTP")
+	// ErrFailedToCheckSMTP is the error that occurs when the SMTP is not checked.
+	ErrFailedToCheckSMTP = errors.New("failed to check SMTP")
 
-	// errFailedToCheckSSO is the error that occurs when the SSO is not checked.
-	errFailedToCheckSSO = errors.New("failed to check SSO")
+	// ErrFailedToCheckSSO is the error that occurs when the SSO is not checked.
+	ErrFailedToCheckSSO = errors.New("failed to check SSO")
 
-	// errFailedToCheckOIDCURL is the error that occurs when the OIDC URL is not checked.
-	errFailedToCheckOIDCURL = errors.New("failed to check OIDC URL")
+	// ErrFailedToCheckOIDCURL is the error that occurs when the OIDC URL is not checked.
+	ErrFailedToCheckOIDCURL = errors.New("failed to check OIDC URL")
 )
 
 // CloudChecker is the type that contains the infrastructure check functions for cloud.
@@ -102,77 +102,77 @@ func (c *CloudChecker) setup() {
 // nolint:funlen
 func (c *CloudChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	const (
-		// logMsgStorageClassChecked is the message that is logged when the storage class is checked.
-		logMsgStorageClassChecked = "checked storage class"
+		// logMsgStorageClassCheckedSuccessfully is the message that is logged when the storage class is checked successfully.
+		logMsgStorageClassCheckedSuccessfully = "checked storage class successfully"
 
-		// logMsgNodeGroupsChecked is the message that is logged when the node groups are checked.
-		logMsgNodeGroupsChecked = "checked node groups"
+		// logMsgNodeGroupsCheckedSuccessfully is the message that is logged when the node groups are checked successfully.
+		logMsgNodeGroupsCheckedSuccessfully = "checked node groups successfully"
 
-		// logMsgNodeGroupsCheckedWithError is the message that is logged when the node groups are checked with an error.
-		logMsgNodeGroupsCheckedWithError = "checked node groups; %s"
+		// logMsgNodeGroupsCheckedWarn is the message that is logged when the node groups are checked with a warning.
+		logMsgNodeGroupsCheckedWarn = "checked node groups; %s"
 
-		// logMsgMySQLChecked is the message that is logged when the MySQL is checked.
-		logMsgMySQLChecked = "checked MySQL"
+		// logMsgMySQLCheckedSuccessfully is the message that is logged when the MySQL is checked successfully.
+		logMsgMySQLCheckedSuccessfully = "checked MySQL successfully"
 
-		// logMsgTLSChecked is the message that is logged when the TLS is checked.
-		logMsgTLSChecked = "checked TLS"
+		// logMsgTLSCheckedSuccessfully is the message that is logged when the TLS is checked successfully.
+		logMsgTLSCheckedSuccessfully = "checked TLS successfully"
 
-		// logMsgSMTPChecked is the message that is logged when the SMTP is checked.
-		logMsgSMTPChecked = "checked SMTP"
+		// logMsgSMTPCheckedSuccessfully is the message that is logged when the SMTP is checked successfully.
+		logMsgSMTPCheckedSuccessfully = "checked SMTP successfully"
 
-		// logMsgSSOChecked is the message that is logged when the SSO is checked.
-		logMsgSSOChecked = "checked SSO"
+		// logMsgSSOCheckedSuccessfully is the message that is logged when the SSO is checked successfully.
+		logMsgSSOCheckedSuccessfully = "checked SSO successfully"
 
-		// logMsgOIDCURLChecked is the message that is logged when the OIDC URL is checked.
-		logMsgOIDCURLChecked = "checked OIDC URL"
+		// logMsgOIDCURLCheckedSuccessfully is the message that is logged when the OIDC URL is checked successfully.
+		logMsgOIDCURLCheckedSuccessfully = "checked OIDC URL successfully"
 	)
 
 	if _, err := c.storageClassChecker.Handle(ctx); err != nil {
-		return nil, multierr.Combine(errFailedToCheckStorageClass, err)
+		return nil, multierr.Combine(ErrFailedToCheckStorageClass, err)
 	}
 
-	c.logger.Log(log.InfoLevel, logMsgStorageClassChecked)
+	c.logger.Info(logMsgStorageClassCheckedSuccessfully)
 
 	if _, err := c.nodeGroupChecker.Handle(ctx); err != nil {
-		c.logger.Logf(log.WarnLevel, logMsgNodeGroupsCheckedWithError, err.Error())
+		c.logger.Logf(log.WarnLevel, logMsgNodeGroupsCheckedWarn, err.Error())
 	} else {
-		c.logger.Log(log.InfoLevel, logMsgNodeGroupsChecked)
+		c.logger.Info(logMsgNodeGroupsCheckedSuccessfully)
 	}
 
 	if _, err := c.mySQLChecker.Handle(ctx); err != nil {
-		return nil, multierr.Combine(errFailedToCheckMySQL, err)
+		return nil, multierr.Combine(ErrFailedToCheckMySQL, err)
 	}
 
-	c.logger.Log(log.InfoLevel, logMsgMySQLChecked)
+	c.logger.Info(logMsgMySQLCheckedSuccessfully)
 
 	if _, err := c.tlsChecker.Handle(ctx); err != nil {
-		return nil, multierr.Combine(errFailedToCheckTLS, err)
+		return nil, multierr.Combine(ErrFailedToCheckTLS, err)
 	}
 
-	c.logger.Log(log.InfoLevel, logMsgTLSChecked)
+	c.logger.Info(logMsgTLSCheckedSuccessfully)
 
 	if _, err := c.smtpChecker.Handle(ctx); err != nil {
-		return nil, multierr.Combine(errFailedToCheckSMTP, err)
+		return nil, multierr.Combine(ErrFailedToCheckSMTP, err)
 	}
 
-	c.logger.Log(log.InfoLevel, logMsgSMTPChecked)
+	c.logger.Info(logMsgSMTPCheckedSuccessfully)
 
 	if _, err := c.ssoChecker.Handle(ctx); err != nil {
-		return nil, multierr.Combine(errFailedToCheckSSO, err)
+		return nil, multierr.Combine(ErrFailedToCheckSSO, err)
 	}
 
-	c.logger.Log(log.InfoLevel, logMsgSSOChecked)
+	c.logger.Info(logMsgSSOCheckedSuccessfully)
 
 	jwksURI, err := util.UnwrapValErr[*string](c.oidcChecker.Handle(ctx))
 	if err != nil {
-		return nil, multierr.Combine(errFailedToCheckOIDCURL, err)
+		return nil, multierr.Combine(ErrFailedToCheckOIDCURL, err)
 	}
 
 	if jwksURI == nil {
 		return nil, nil
 	}
 
-	c.logger.Log(log.InfoLevel, logMsgOIDCURLChecked)
+	c.logger.Info(logMsgOIDCURLCheckedSuccessfully)
 
 	return []any{jwksURI}, nil
 }

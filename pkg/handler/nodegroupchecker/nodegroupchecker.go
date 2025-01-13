@@ -12,10 +12,13 @@ import (
 
 var (
 	// errNoNodesWithGPULabel is the error that is returned when no nodes with the GPU label are found.
-	errNoNodesWithGPULabel = errors.New("no nodes with GPU label found")
+	errNoNodesWithGPULabel = errors.New(
+		"no nodes with GPU label found; " +
+			"if this is unexpected, check the documentation at https://developer.alpha-sense.com/enterprise/technical-requirements/#node-groups-configuration",
+	)
 )
 
-// NodeGroupChecker is the type that contains the node group check functions.
+// NodeGroupChecker is the type that contains the node groups check functions.
 type NodeGroupChecker struct {
 	// clientset is the Kubernetes client.
 	clientset kubernetes.Interface

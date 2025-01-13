@@ -76,7 +76,7 @@ func (c *installCmd) run(cobraCmd *cobra.Command, args []string) {
 		logMsgInstallationCompleted = "installation completed"
 	)
 
-	c.logger.Log(log.InfoLevel, logMsgInstallationStarted)
+	c.logger.Info(logMsgInstallationStarted)
 
 	firstStepFile := args[2]
 
@@ -88,7 +88,7 @@ func (c *installCmd) run(cobraCmd *cobra.Command, args []string) {
 		c.logger.Fatal(errKubectlNotAvailable)
 	}
 
-	c.logger.Log(log.InfoLevel, logMsgKubectlChecked)
+	c.logger.Debug(logMsgKubectlChecked)
 
 	context := args[0]
 
@@ -132,7 +132,7 @@ func (c *installCmd) run(cobraCmd *cobra.Command, args []string) {
 
 	c.waitForPhases(constPhasesToWaitForCompleted)
 
-	c.logger.Log(log.InfoLevel, logMsgInstallationCompleted)
+	c.logger.Info(logMsgInstallationCompleted)
 }
 
 // applyFile is the function that applies the file.
@@ -141,28 +141,38 @@ func (c *installCmd) applyFile(file string, count int) error {
 		// errExitStatusOne is the error that is returned when the exit status is 1.
 		errExitStatusOne = "exit status 1"
 
+		// logMsgApplyingFile is the message that is logged when applying the file.
+		logMsgApplyingFile = "applying file %s..."
+
 		// logMsgExpectedErrorOccurred is the message that is logged when an expected error occurs and the file is applied again.
 		logMsgExpectedErrorOccurred = "expected error occurred, applying again"
+
+		// logMsgFileApplied is the message that is logged when the file is applied.
+		logMsgFileApplied = "file %s applied"
 
 		// sleepInterval is the interval of time to sleep between each apply.
 		sleepInterval = 1 * time.Minute
 	)
+
+	c.logger.Infof(logMsgApplyingFile, file)
 
 	for i := 0; i < count; i++ {
 		if err := util.Exec(c.logger, nil, kubectlBin, "apply", "--server-side", "--force-conflicts", "-f", file); err != nil {
 			// If the resource mapping is not found on the first apply and the requested apply count is greater than 1,
 			// then we can safely ignore the error and proceed to the next apply.
 			if count > 1 && i == 0 && strings.Contains(err.Error(), errExitStatusOne) {
-				c.logger.Warn(logMsgExpectedErrorOccurred)
+				c.logger.Debug(logMsgExpectedErrorOccurred)
 			} else {
 				return err
 			}
 		}
 
-		c.logger.Logf(log.InfoLevel, logMsgSleeping, sleepInterval)
+		c.logger.Infof(logMsgSleeping, sleepInterval)
 
 		time.Sleep(sleepInterval)
 	}
+
+	c.logger.Infof(logMsgFileApplied, file)
 
 	return nil
 }
@@ -214,15 +224,15 @@ func (c *installCmd) waitForPhases(phases []string) {
 
 		phase := data.Items[0].Status.Phase
 
-		c.logger.Logf(log.InfoLevel, logMsgWaitingForPhases, phases, phase)
+		c.logger.Debugf(logMsgWaitingForPhases, phases, phase)
 
 		if slices.Contains(phases, phase) {
-			c.logger.Logf(log.InfoLevel, logMsgGotPhase, phase)
+			c.logger.Debugf(logMsgGotPhase, phase)
 
 			break
 		}
 
-		c.logger.Logf(log.InfoLevel, logMsgSleeping, sleepInterval)
+		c.logger.Debugf(logMsgSleeping, sleepInterval)
 
 		time.Sleep(sleepInterval)
 	}

@@ -150,7 +150,7 @@ func (c *checkCmd) createServiceAccount(ctx context.Context, serviceAccountName 
 		return multierr.Combine(errFailedToCreateServiceAccount, err)
 	}
 
-	c.logger.Logf(log.InfoLevel, logMsgServiceAccountCreated, namespaceDefault, serviceAccount.Name)
+	c.logger.Debugf(logMsgServiceAccountCreated, namespaceDefault, serviceAccount.Name)
 
 	return nil
 }
@@ -208,7 +208,7 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 			return multierr.Combine(errFailedToCreateRole, err)
 		}
 
-		c.logger.Logf(log.InfoLevel, logMsgRoleCreated, pair.namespace, role.Name)
+		c.logger.Debugf(logMsgRoleCreated, pair.namespace, role.Name)
 	}
 
 	clusterRole := &rbacv1.ClusterRole{
@@ -222,7 +222,7 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 		return multierr.Combine(errFailedToCreateClusterRole, err)
 	}
 
-	c.logger.Logf(log.InfoLevel, logMsgClusterRoleCreated, clusterRole.Name)
+	c.logger.Debugf(logMsgClusterRoleCreated, clusterRole.Name)
 
 	return nil
 }
@@ -262,7 +262,7 @@ func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccountName st
 			return multierr.Combine(errFailedToCreateRoleBinding, err)
 		}
 
-		c.logger.Logf(log.InfoLevel, logMsgRoleBindingCreated, ns, roleBindingName)
+		c.logger.Debugf(logMsgRoleBindingCreated, ns, roleBindingName)
 	}
 
 	if _, err := c.clientset.RbacV1().ClusterRoleBindings().Create(ctx, &rbacv1.ClusterRoleBinding{
@@ -279,7 +279,7 @@ func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccountName st
 		return multierr.Combine(errFailedToCreateClusterRoleBinding, err)
 	}
 
-	c.logger.Logf(log.InfoLevel, logMsgClusterRoleBindingCreated, roleBindingName)
+	c.logger.Debugf(logMsgClusterRoleBindingCreated, roleBindingName)
 
 	return nil
 }
@@ -328,7 +328,7 @@ func (c *checkCmd) createPod(ctx context.Context, serviceAccountName string) err
 		return multierr.Combine(errFailedToCreatePod, err)
 	}
 
-	c.logger.Logf(log.InfoLevel, constant.LogMsgPodCreated, namespaceDefault, constant.AppName)
+	c.logger.Debugf(constant.LogMsgPodCreated, namespaceDefault, constant.AppName)
 
 	return nil
 }
@@ -338,7 +338,7 @@ func (c *checkCmd) printPodLogs(logs []string) error {
 	// logMsgPrintingPodLogs is the message that is logged when the pod logs are printed.
 	const logMsgPrintingPodLogs = "printing Pod logs..."
 
-	c.logger.Log(log.InfoLevel, logMsgPrintingPodLogs)
+	c.logger.Debug(logMsgPrintingPodLogs)
 
 	// logEntry is the struct that represents a log entry.
 	type logEntry struct {
@@ -349,6 +349,8 @@ func (c *checkCmd) printPodLogs(logs []string) error {
 		// Message is the Message of the log entry.
 		Message string `json:"msg"`
 	}
+
+	var shouldExitOne bool
 
 	for _, logStr := range logs {
 		var e logEntry
@@ -376,12 +378,16 @@ func (c *checkCmd) printPodLogs(logs []string) error {
 		c.logger.Log(level, e.Message)
 
 		if level == log.FatalLevel {
-			os.Exit(1)
+			shouldExitOne = true
 		}
 	}
 
 	// Reset the time function to the default one, converting to UTC.
 	c.logger.SetTimeFunction(constant.LogDefaultTimeFunc)
+
+	if shouldExitOne {
+		os.Exit(1)
+	}
 
 	return nil
 }
@@ -389,7 +395,14 @@ func (c *checkCmd) printPodLogs(logs []string) error {
 // cleanupResources cleans up the resources.
 //
 // nolint:funlen
-func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string, roleName string, serviceAccountName string, allowNotFound bool) error {
+func (c *checkCmd) cleanupResources(
+	ctx context.Context,
+	roleBindingName string,
+	roleName string,
+	serviceAccountName string,
+	allowNotFound bool,
+	shouldExitOne bool,
+) (*corev1.Pod, error) {
 	const (
 		// logMsgClusterRoleBindingDeleted is the message that is logged when the cluster role binding is deleted.
 		logMsgClusterRoleBindingDeleted = "deleted %s ClusterRoleBinding"
@@ -409,34 +422,34 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 
 	pod, err := c.clientsetPod.Get(ctx, constant.AppName, metav1.GetOptions{})
 	if err != nil && (!allowNotFound && !k8serrors.IsNotFound(err)) {
-		return multierr.Combine(kubeutil.ErrFailedToGetPod, err)
+		return nil, multierr.Combine(kubeutil.ErrFailedToGetPod, err)
 	}
 
 	if err = c.clientsetPod.Delete(ctx, constant.AppName, metav1.DeleteOptions{}); err != nil && !allowNotFound && !k8serrors.IsNotFound(err) {
-		return multierr.Combine(errFailedToDeletePod, err)
+		return pod, multierr.Combine(errFailedToDeletePod, err)
 	}
 
-	c.logger.Logf(log.InfoLevel, constant.LogMsgPodDeleted, namespaceDefault, constant.AppName)
+	c.logger.Debugf(constant.LogMsgPodDeleted, namespaceDefault, constant.AppName)
 
 	if err = c.clientset.RbacV1().ClusterRoleBindings().Delete(
 		ctx,
 		roleBindingName,
 		metav1.DeleteOptions{},
 	); err != nil && !allowNotFound && !k8serrors.IsNotFound(err) {
-		return multierr.Combine(errFailedToDeleteRoleBinding, err)
+		return pod, multierr.Combine(errFailedToDeleteRoleBinding, err)
 	}
 
-	c.logger.Logf(log.InfoLevel, logMsgClusterRoleBindingDeleted, roleBindingName)
+	c.logger.Debugf(logMsgClusterRoleBindingDeleted, roleBindingName)
 
 	if err = c.clientset.RbacV1().ClusterRoles().Delete(
 		ctx,
 		roleName,
 		metav1.DeleteOptions{},
 	); err != nil && !allowNotFound && !k8serrors.IsNotFound(err) {
-		return multierr.Combine(errFailedToDeleteRole, err)
+		return pod, multierr.Combine(errFailedToDeleteRole, err)
 	}
 
-	c.logger.Logf(log.InfoLevel, logMsgClusterRoleDeleted, roleName)
+	c.logger.Debugf(logMsgClusterRoleDeleted, roleName)
 
 	for _, ns := range constRoleNamespaces {
 		if err = c.clientset.RbacV1().RoleBindings(ns).Delete(
@@ -444,33 +457,33 @@ func (c *checkCmd) cleanupResources(ctx context.Context, roleBindingName string,
 			roleBindingName,
 			metav1.DeleteOptions{},
 		); err != nil && !allowNotFound && !k8serrors.IsNotFound(err) {
-			return multierr.Combine(errFailedToDeleteRoleBinding, err)
+			return pod, multierr.Combine(errFailedToDeleteRoleBinding, err)
 		}
 
-		c.logger.Logf(log.InfoLevel, logMsgRoleBindingDeleted, ns, roleBindingName)
+		c.logger.Debugf(logMsgRoleBindingDeleted, ns, roleBindingName)
 
 		if err = c.clientset.RbacV1().Roles(ns).Delete(
 			ctx,
 			roleName,
 			metav1.DeleteOptions{},
 		); err != nil && !allowNotFound && !k8serrors.IsNotFound(err) {
-			return multierr.Combine(errFailedToDeleteRole, err)
+			return pod, multierr.Combine(errFailedToDeleteRole, err)
 		}
 
-		c.logger.Logf(log.InfoLevel, logMsgRoleDeleted, ns, roleName)
+		c.logger.Debugf(logMsgRoleDeleted, ns, roleName)
 	}
 
 	if err = c.clientsetSA.Delete(ctx, serviceAccountName, metav1.DeleteOptions{}); err != nil && !allowNotFound && !k8serrors.IsNotFound(err) {
-		return multierr.Combine(errFailedToDeleteServiceAccount, err)
+		return pod, multierr.Combine(errFailedToDeleteServiceAccount, err)
 	}
 
-	c.logger.Logf(log.InfoLevel, logMsgServiceAccountDeleted, namespaceDefault, serviceAccountName)
+	c.logger.Debugf(logMsgServiceAccountDeleted, namespaceDefault, serviceAccountName)
 
-	if pod != nil && !allowNotFound && pod.Status.Phase == corev1.PodFailed {
+	if shouldExitOne && pod != nil && !allowNotFound && pod.Status.Phase == corev1.PodFailed {
 		os.Exit(1)
 	}
 
-	return nil
+	return pod, nil
 }
 
 // run is the run function for the Check command.
@@ -488,11 +501,9 @@ func (c *checkCmd) run(cobraCmd *cobra.Command, args []string) {
 		logMsgNamespaceEnsured = "ensured %s Namespace"
 	)
 
-	c.logger.Log(log.InfoLevel, logMsgInfraCheckStarted)
-
 	firstStepFile := args[0]
 
-	c.logger.Logf(log.InfoLevel, logMsgEnvConfigRead, firstStepFile)
+	c.logger.Debugf(logMsgEnvConfigRead, firstStepFile)
 
 	var err error
 
@@ -508,7 +519,7 @@ func (c *checkCmd) run(cobraCmd *cobra.Command, args []string) {
 		c.logger.Fatal(multierr.Combine(errFailedToGetKubeConfig, err))
 	}
 
-	c.logger.Logf(log.InfoLevel, logMsgKubeLoadedConfig, path)
+	c.logger.Debugf(logMsgKubeLoadedConfig, path)
 
 	serviceAccountName := fmt.Sprintf("%s-sa", constant.AppName)
 
@@ -523,14 +534,14 @@ func (c *checkCmd) run(cobraCmd *cobra.Command, args []string) {
 	}
 
 	if util.FlagBool(cobraCmd, flagCleanupOnly) {
-		if err = c.cleanupResources(ctx, roleBindingName, roleName, serviceAccountName, true); err != nil {
+		if _, err = c.cleanupResources(ctx, roleBindingName, roleName, serviceAccountName, true, true); err != nil {
 			c.logger.Fatal(err)
 		}
 
 		return
 	}
 
-	c.logger.Log(log.InfoLevel, logMsgKubeClientsetCreated)
+	c.logger.Debug(logMsgKubeClientsetCreated)
 
 	if _, err := c.clientsetNamespace.Create(ctx, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -540,7 +551,7 @@ func (c *checkCmd) run(cobraCmd *cobra.Command, args []string) {
 		c.logger.Fatal(multierr.Combine(errFailedToEnsureNamespace, err))
 	}
 
-	c.logger.Logf(log.InfoLevel, logMsgNamespaceEnsured, constant.NamespaceCrossplane)
+	c.logger.Debugf(logMsgNamespaceEnsured, constant.NamespaceCrossplane)
 
 	if err = c.createServiceAccount(ctx, serviceAccountName); err != nil {
 		c.logger.Fatal(err)
@@ -558,30 +569,46 @@ func (c *checkCmd) run(cobraCmd *cobra.Command, args []string) {
 		c.logger.Fatal(err)
 	}
 
-	cleanup := func() {
-		if err := c.cleanupResources(ctx, roleBindingName, roleName, serviceAccountName, false); err != nil {
-			c.logger.Fatal(err)
+	c.logger.Info(logMsgInfraCheckStarted)
+
+	cleanup := func() (*corev1.Pod, error) {
+		if pod, err := c.cleanupResources(ctx, roleBindingName, roleName, serviceAccountName, false, false); err != nil {
+			return pod, err
 		}
+
+		return nil, nil
 	}
 
 	_, err = kubeutil.WaitForPodToSucceedOrFail(ctx, c.logger, c.clientset, namespaceDefault, constant.AppName)
 	if err != nil {
-		cleanup()
+		if _, err := cleanup(); err != nil {
+			c.logger.Fatal(err)
+		}
 
 		c.logger.Fatal(err)
 	}
 
 	logs, err := kubeutil.PodLogs(ctx, c.logger, c.clientset, namespaceDefault, constant.AppName)
 	if err != nil {
-		cleanup()
+		if _, err := cleanup(); err != nil {
+			c.logger.Fatal(err)
+		}
 
 		c.logger.Fatal(err)
 	}
 
-	cleanup()
+	var pod *corev1.Pod
+
+	if pod, err = cleanup(); err != nil {
+		c.logger.Fatal(err)
+	}
 
 	if err = c.printPodLogs(logs); err != nil {
 		c.logger.Fatal(err)
+	}
+
+	if pod != nil && pod.Status.Phase == corev1.PodFailed {
+		os.Exit(1)
 	}
 }
 

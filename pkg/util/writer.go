@@ -6,17 +6,17 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-// LogInfoWriter is a writer that logs messages at the info level.
-type LogInfoWriter struct {
+// LogDebugWriter is a writer that logs messages at the debug level.
+type LogDebugWriter struct {
 	// Logger is the logger.
 	Logger *log.Logger
 }
 
-var _ io.Writer = &LogInfoWriter{}
+var _ io.Writer = &LogDebugWriter{}
 
 // Write is the implementation of the io.Writer interface.
-func (w *LogInfoWriter) Write(p []byte) (n int, err error) {
-	w.Logger.Log(log.InfoLevel, string(p[:len(p)-1]))
+func (w *LogDebugWriter) Write(p []byte) (n int, err error) {
+	w.Logger.Debug(string(p[:len(p)-1]))
 
 	return len(p), nil
 }
@@ -31,7 +31,7 @@ var _ io.Writer = &LogErrorWriter{}
 
 // Write is the implementation of the io.Writer interface.
 func (w *LogErrorWriter) Write(p []byte) (n int, err error) {
-	w.Logger.Log(log.ErrorLevel, string(p[:len(p)-1]))
+	w.Logger.Error(string(p[:len(p)-1]))
 
 	return len(p), nil
 }

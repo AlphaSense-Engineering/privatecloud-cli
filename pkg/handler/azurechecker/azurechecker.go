@@ -60,13 +60,13 @@ func (c *AzureChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, multierr.Combine(jwtretriever.ErrFailedToRetrieveJWTs, err)
 	}
 
-	c.logger.Log(log.InfoLevel, jwtretriever.LogMsgJWTsRetrieved)
+	c.logger.Debug(jwtretriever.LogMsgJWTsRetrieved)
 
 	if _, err := c.jwtChecker.Handle(ctx, jwts); err != nil {
 		return nil, multierr.Combine(jwtchecker.ErrFailedToCheckJWTs, err)
 	}
 
-	c.logger.Log(log.InfoLevel, jwtchecker.LogMsgJWTsChecked)
+	c.logger.Debug(jwtchecker.LogMsgJWTsChecked)
 
 	jwt := jwts[0]
 
@@ -101,7 +101,7 @@ func (c *AzureChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, multierr.Combine(crossplanerolechecker.ErrFailedToCheckCrossplaneRole, err)
 	}
 
-	c.logger.Log(log.InfoLevel, crossplanerolechecker.LogMsgCrossplaneRoleChecked)
+	c.logger.Info(crossplanerolechecker.LogMsgCrossplaneRoleChecked)
 
 	return nil, nil
 }
