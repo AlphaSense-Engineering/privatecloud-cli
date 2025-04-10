@@ -101,6 +101,9 @@ We use **Task** to manage development commands. The following commands are avail
   task pod-image-build
   ```
 
+  By default, the command builds the image with the `dev` tag. To build the image with a specific tag, set the `VERSION` environment variable to the desired
+  tag.
+
 ## Architecture
 
 ### Infrastructure Check Command
