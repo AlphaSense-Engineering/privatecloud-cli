@@ -10,7 +10,7 @@ stash_pop() {
 
 trap stash_pop INT TERM
 
-git stash push -k -m "pre-lint-stash"
+git stash push -k -u -m "pre-lint-stash"
 
 run() {
   set +e
