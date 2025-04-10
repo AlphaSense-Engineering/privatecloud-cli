@@ -29,6 +29,12 @@ const (
 const (
 	// envVarEnvConfig is the name of the environment variable that contains the base64 encoded environment configuration.
 	envVarEnvConfig = "ENVCONFIG"
+
+	// envVarGoogleCloudSDKDockerRepo is the name of the environment variable that contains the Docker repository for the Google Cloud SDK.
+	envVarGoogleCloudSDKDockerRepo = "GOOGLE_CLOUD_SDK_DOCKER_REPO"
+
+	// envVarGoogleCloudSDKDockerImage is the name of the environment variable that contains the Docker image for the Google Cloud SDK.
+	envVarGoogleCloudSDKDockerImage = "GOOGLE_CLOUD_SDK_DOCKER_IMAGE"
 )
 
 // cmd is the interface that all commands must implement.

@@ -2,6 +2,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
 	"github.com/spf13/cobra"
 )
@@ -34,8 +36,9 @@ func Root() *cobra.Command {
 	cmd := newRootCmd()
 
 	cobraCmd := &cobra.Command{
-		Use: constant.AppName,
-		Run: cmd.run,
+		Use:     constant.AppName,
+		Run:     cmd.run,
+		Version: fmt.Sprintf("%s (commit: %s, date: %s)", constant.BuildVersion, constant.BuildCommit, constant.BuildDate),
 	}
 
 	cobraCmd.PersistentFlags().BoolP(FlagVerbose, flagVerboseShort, false, "verbose output")

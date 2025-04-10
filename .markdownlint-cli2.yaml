@@ -1,4 +1,9 @@
+ignores:
+  - .changes/*.md
+  - CHANGELOG.md
+
 noBanner: true
+
 noProgress: true
 
 outputFormatters:

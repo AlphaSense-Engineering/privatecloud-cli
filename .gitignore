@@ -228,6 +228,7 @@ markdownlint-cli2-sarif.sarif
 
 # Project specific
 
+dist/
 privatecloud-cli
 envconfig.yaml
 *step1*.yaml

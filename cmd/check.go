@@ -79,6 +79,11 @@ const (
 	flagDockerImage = "docker-image"
 	// flagImagePullSecret is the name of the flag for the image pull secret.
 	flagImagePullSecret = "image-pull-secret" // nolint:gosec
+
+	// flagGoogleCloudSDKDockerRepo is the name of the flag for the Google Cloud SDK Docker repository.
+	flagGoogleCloudSDKDockerRepo = "google-cloud-sdk-docker-repo"
+	// flagGoogleCloudSDKDockerImage is the name of the flag for the Google Cloud SDK Docker image.
+	flagGoogleCloudSDKDockerImage = "google-cloud-sdk-docker-image"
 )
 
 // namespaceDefault is the default namespace.
@@ -285,10 +290,32 @@ func (c *checkCmd) createRoleBindings(ctx context.Context, serviceAccountName st
 }
 
 // createPod creates the pod.
+//
+// nolint:funlen
 func (c *checkCmd) createPod(ctx context.Context, serviceAccountName string) error {
 	envConfigBytes, err := yaml.Marshal(c.envConfig)
 	if err != nil {
 		return multierr.Combine(errFailedToMarshalEnvConfig, err)
+	}
+
+	envVars := []corev1.EnvVar{{
+		Name:  envVarEnvConfig,
+		Value: base64.StdEncoding.EncodeToString(envConfigBytes),
+	}}
+
+	for _, flag := range []struct {
+		name  string
+		value string
+	}{
+		{envVarGoogleCloudSDKDockerRepo, util.Flag(c.cobraCmd, flagGoogleCloudSDKDockerRepo)},
+		{envVarGoogleCloudSDKDockerImage, util.Flag(c.cobraCmd, flagGoogleCloudSDKDockerImage)},
+	} {
+		if flag.value != constant.EmptyString {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  flag.name,
+				Value: flag.value,
+			})
+		}
 	}
 
 	pod := &corev1.Pod{
@@ -306,10 +333,7 @@ func (c *checkCmd) createPod(ctx context.Context, serviceAccountName string) err
 					},
 					string(constant.HTTPPathSeparator),
 				),
-				Env: []corev1.EnvVar{{
-					Name:  envVarEnvConfig,
-					Value: base64.StdEncoding.EncodeToString(envConfigBytes),
-				}},
+				Env:             envVars,
 				ImagePullPolicy: corev1.PullAlways,
 			}},
 			RestartPolicy: corev1.RestartPolicyNever,
@@ -627,12 +651,18 @@ If you do not specify the Kubernetes configuration file, the command will use th
 func (c *checkCmd) flags(shouldAddCleanupOnlyFlag bool) {
 	const (
 		// defaultDockerRepo is the default repository to use for the pod image.
-		defaultDockerRepo = ""
+		defaultDockerRepo = "ghcr.io/alphasense-engineering"
+
+		// defaultGoogleCloudSDKDockerRepo is the default repository to use for the Google Cloud SDK image.
+		defaultGoogleCloudSDKDockerRepo = "google"
+
+		// defaultGoogleCloudSDKDockerImage is the default image to use for the Google Cloud SDK image.
+		defaultGoogleCloudSDKDockerImage = "cloud-sdk:latest"
 	)
 
 	var (
 		// defaultDockerImage is the default image to use for the pod.
-		defaultDockerImage = fmt.Sprintf("%s-pod:latest", constant.AppName)
+		defaultDockerImage = fmt.Sprintf("%s-pod:%s", constant.AppName, constant.BuildVersion)
 	)
 
 	c.cobraCmd.Flags().String(
@@ -646,8 +676,14 @@ func (c *checkCmd) flags(shouldAddCleanupOnlyFlag bool) {
 	}
 
 	c.cobraCmd.Flags().String(flagDockerRepo, defaultDockerRepo, "the Docker repository to use for the Pod image")
+
 	c.cobraCmd.Flags().String(flagDockerImage, defaultDockerImage, "the Docker image to use for the Pod")
+
 	c.cobraCmd.Flags().String(flagImagePullSecret, constant.EmptyString, "the name of the image pull secret to use for the Pod")
+
+	c.cobraCmd.Flags().String(flagGoogleCloudSDKDockerRepo, defaultGoogleCloudSDKDockerRepo, "the Docker repository to use for the Google Cloud SDK image")
+
+	c.cobraCmd.Flags().String(flagGoogleCloudSDKDockerImage, defaultGoogleCloudSDKDockerImage, "the Docker image to use for the Google Cloud SDK")
 }
 
 // newCheckCmd returns a new checkCmd.

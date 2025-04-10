@@ -1,0 +1,51 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+
+    ldflags:
+      - >-
+        -s -w
+        -X github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant.BuildVersion={{.Version}}
+        -X github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant.BuildCommit={{.Commit}}
+        -X github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant.BuildDate={{.Date}}
+
+    goos:
+      - darwin
+      - linux
+      - windows
+
+archives:
+  - format_overrides:
+    - goos: windows
+      formats:
+        - zip
+
+changelog:
+  disable: false
+
+checksum:
+  name_template: checksums.txt
+
+dockers:
+  - goos: linux
+    goarch: amd64
+
+    dockerfile: pod.dockerfile
+
+    image_templates:
+      - ghcr.io/alphasense-engineering/privatecloud-cli-pod:latest
+      - ghcr.io/alphasense-engineering/privatecloud-cli-pod:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+
+    build_flag_templates:
+      - --pull
+      - --label=org.opencontainers.image.created={{.Date}}
+      - --label=org.opencontainers.image.title={{.ProjectName}}
+      - --label=org.opencontainers.image.revision={{.FullCommit}}
+      - --label=org.opencontainers.image.version={{.Version}}
+      - --platform=linux/amd64

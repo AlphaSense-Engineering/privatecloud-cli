@@ -21,6 +21,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    if: >-
+      (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no ci')) ||
+      github.event_name == 'push'
+
     steps:
       - uses: actions/checkout@v4
         with:
