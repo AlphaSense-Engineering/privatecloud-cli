@@ -1,11 +1,5 @@
-FROM golang:alpine
+FROM scratch
 
-WORKDIR /app
+COPY privatecloud-cli /
 
-COPY go.mod go.sum ./
-RUN go mod download
-
-COPY . .
-RUN go build -o privatecloud-cli .
-
-CMD ["./privatecloud-cli", "pod"]
+ENTRYPOINT ["/privatecloud-cli", "pod"]
