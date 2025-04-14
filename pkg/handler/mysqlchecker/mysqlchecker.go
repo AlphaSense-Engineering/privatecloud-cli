@@ -4,12 +4,13 @@ package mysqlchecker
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/constant"
-	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/db/mysqlutil"
 	pkgerrors "github.com/AlphaSense-Engineering/privatecloud-cli/pkg/errors"
 	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler"
 	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/util"
+	"github.com/go-sql-driver/mysql"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -69,14 +70,13 @@ func (c *MySQLChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, err
 	}
 
-	dsn := mysqlutil.DSN(
-		data[constant.SecretUsernameKey],
-		data[constant.SecretPasswordKey],
-		data[secretEndpointKey],
-		data[constant.SecretPortKey],
-	)
+	cfg := mysql.Config{
+		User:   data[constant.SecretUsernameKey],
+		Passwd: data[constant.SecretPasswordKey],
+		Addr:   fmt.Sprintf("%s:%s", data[secretEndpointKey], data[constant.SecretPortKey]),
+	}
 
-	db, err := sql.Open("mysql", dsn)
+	db, err := sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
 		return nil, err
 	}
