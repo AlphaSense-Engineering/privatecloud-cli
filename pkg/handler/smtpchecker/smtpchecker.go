@@ -22,7 +22,7 @@ var _ handler.Handler = &SMTPChecker{}
 // Handle is the function that handles the SMTP checking.
 //
 // The arguments are not used.
-// It returns nothing on success, or an error on failure.
+// It returns the SMTP secret on success, or an error on failure.
 func (c *SMTPChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	const (
 		// secretName is the name of the secret that contains the SMTP credentials.
@@ -51,7 +51,7 @@ func (c *SMTPChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, err
 	}
 
-	return nil, nil
+	return []any{secret}, nil
 }
 
 // New is a function that returns a new SMTPChecker.
