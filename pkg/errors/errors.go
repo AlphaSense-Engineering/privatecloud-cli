@@ -31,6 +31,24 @@ func NewErrWithChangelog(err error, changelog diff.Changelog) error {
 	return &ErrWithChangelog{err: err, changelog: changelog}
 }
 
+// EnvVarIsNotSetOrEmpty is the error that is returned when the environment variable is not set or empty.
+type EnvVarIsNotSetOrEmpty struct {
+	// envVar is the environment variable that is not set or empty.
+	envVar string
+}
+
+var _ error = &EnvVarIsNotSetOrEmpty{}
+
+// Error is a function that returns the error message.
+func (e *EnvVarIsNotSetOrEmpty) Error() string {
+	return fmt.Sprintf("environment variable %s is not set or empty", e.envVar)
+}
+
+// NewEnvVarIsNotSetOrEmpty is a function that returns a new EnvVarIsNotSetOrEmpty error.
+func NewEnvVarIsNotSetOrEmpty(envVar string) error {
+	return &EnvVarIsNotSetOrEmpty{envVar: envVar}
+}
+
 // KeyExpectedGot is the error that is returned when the key is expected to be a certain value, but it is not.
 type KeyExpectedGot struct {
 	// key is the key that is mismatched.

@@ -29,9 +29,6 @@ import (
 )
 
 var (
-	// errEnvConfigFlagIsNotSetOrEmpty is the error that is returned when the envconfig flag is not set or empty.
-	errEnvConfigFlagIsNotSetOrEmpty = errors.New("envconfig flag is not set or empty")
-
 	// errFailedToDecodeEnvConfig is the error that is returned when the envconfig data from the flag cannot be decoded.
 	errFailedToDecodeEnvConfig = errors.New("failed to decode envconfig")
 
@@ -130,7 +127,7 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 
 	envConfigBase64 := os.Getenv(envVarEnvConfig)
 	if envConfigBase64 == constant.EmptyString {
-		c.logger.Fatal(errEnvConfigFlagIsNotSetOrEmpty)
+		c.logger.Fatal(pkgerrors.NewEnvVarIsNotSetOrEmpty(envVarEnvConfig))
 	}
 
 	envConfigBytes, err := base64.StdEncoding.DecodeString(envConfigBase64)
@@ -144,6 +141,16 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 	}
 
 	c.logger.Debug(logMsgEnvConfigDecoded)
+
+	googleCloudSDKDockerRepo := os.Getenv(envVarGoogleCloudSDKDockerRepo)
+	if googleCloudSDKDockerRepo == constant.EmptyString {
+		c.logger.Fatal(pkgerrors.NewEnvVarIsNotSetOrEmpty(envVarGoogleCloudSDKDockerRepo))
+	}
+
+	googleCloudSDKDockerImage := os.Getenv(envVarGoogleCloudSDKDockerImage)
+	if googleCloudSDKDockerImage == constant.EmptyString {
+		c.logger.Fatal(pkgerrors.NewEnvVarIsNotSetOrEmpty(envVarGoogleCloudSDKDockerImage))
+	}
 
 	kubeConfig, path, err := kubeutil.Config(constant.EmptyString)
 	if err != nil {
@@ -216,14 +223,23 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 			cloudchecker.ErrFailedToCheckOIDCURL:      {}, // Special case, docs per cloud provider.
 		}
 
-		// nolint:errorlint
-		if _, exists := docMap[err]; !exists {
+		var targetErr error
+
+		for k := range docMap {
+			if errors.Is(err, k) {
+				targetErr = k
+
+				break
+			}
+		}
+
+		if targetErr == nil {
 			c.logger.Fatal(errUnknownError)
 		}
 
-		if docs, exists := docMap[err]; exists {
+		if docs, exists := docMap[targetErr]; exists {
 			c.logRelatedDocumentation(docs...)
-		} else if err == cloudchecker.ErrFailedToCheckOIDCURL { // nolint:errorlint
+		} else if errors.Is(err, cloudchecker.ErrFailedToCheckOIDCURL) {
 			if vcloud == cloud.AWS {
 				c.logRelatedDocumentation(docsAWSOIDC)
 			} else if vcloud == cloud.Azure {
@@ -250,7 +266,7 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 	} else if vcloud == cloud.Azure {
 		concreteCloudChecker = azurechecker.New(c.logger, envConfig, clientset, httpClient, jwksURI)
 	} else if vcloud == cloud.GCP {
-		concreteCloudChecker = gcpchecker.New(c.logger, envConfig, clientset)
+		concreteCloudChecker = gcpchecker.New(c.logger, envConfig, clientset, googleCloudSDKDockerRepo, googleCloudSDKDockerImage)
 	}
 
 	if _, err := concreteCloudChecker.Handle(ctx); err != nil {
