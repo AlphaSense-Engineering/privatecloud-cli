@@ -21,6 +21,11 @@ type GCPChecker struct {
 	// clientset is the Kubernetes client.
 	clientset kubernetes.Interface
 
+	// googleCloudSDKDockerRepo is the Docker repository for the Google Cloud SDK.
+	googleCloudSDKDockerRepo string
+	// googleCloudSDKDockerImage is the Docker image for the Google Cloud SDK.
+	googleCloudSDKDockerImage string
+
 	// crossplaneRoleChecker is the GCP Crossplane role checker.
 	crossplaneRoleChecker *gcpcrossplanerolechecker.GCPCrossplaneRoleChecker
 }
@@ -29,7 +34,13 @@ var _ handler.Handler = &GCPChecker{}
 
 // setup is the function that sets up the GCP checker.
 func (c *GCPChecker) setup() {
-	c.crossplaneRoleChecker = gcpcrossplanerolechecker.New(c.logger, c.envConfig, c.clientset)
+	c.crossplaneRoleChecker = gcpcrossplanerolechecker.New(
+		c.logger,
+		c.envConfig,
+		c.clientset,
+		c.googleCloudSDKDockerRepo,
+		c.googleCloudSDKDockerImage,
+	)
 }
 
 // Handle is the function that handles the infrastructure check.
@@ -47,11 +58,20 @@ func (c *GCPChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 }
 
 // New is the function that creates a new GCPChecker.
-func New(logger *log.Logger, envConfig *envconfig.EnvConfig, clientset kubernetes.Interface) *GCPChecker {
+func New(
+	logger *log.Logger,
+	envConfig *envconfig.EnvConfig,
+	clientset kubernetes.Interface,
+	googleCloudSDKDockerRepo string,
+	googleCloudSDKDockerImage string,
+) *GCPChecker {
 	c := &GCPChecker{
 		logger:    logger,
 		envConfig: envConfig,
 		clientset: clientset,
+
+		googleCloudSDKDockerRepo:  googleCloudSDKDockerRepo,
+		googleCloudSDKDockerImage: googleCloudSDKDockerImage,
 	}
 
 	c.setup()

@@ -159,6 +159,11 @@ type GCPCrossplaneRoleChecker struct {
 	envConfig *envconfig.EnvConfig
 	// clientset is the Kubernetes client.
 	clientset kubernetes.Interface
+
+	// googleCloudSDKDockerRepo is the Docker repository for the Google Cloud SDK.
+	googleCloudSDKDockerRepo string
+	// googleCloudSDKDockerImage is the Docker image for the Google Cloud SDK.
+	googleCloudSDKDockerImage string
 }
 
 var _ handler.Handler = &GCPCrossplaneRoleChecker{}
@@ -178,8 +183,15 @@ func (c *GCPCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 		Spec: corev1.PodSpec{
 			ServiceAccountName: constant.ServiceAccountNameGCP,
 			Containers: []corev1.Container{{
-				Name:  podName,
-				Image: "google/cloud-sdk:latest",
+				Name: podName,
+				Image: strings.Join(
+					[]string{
+						c.googleCloudSDKDockerRepo,
+						c.googleCloudSDKDockerImage,
+					},
+					string(constant.HTTPPathSeparator),
+				),
+				ImagePullPolicy: corev1.PullAlways,
 				Command: []string{
 					"/bin/bash",
 					"-c",
@@ -263,10 +275,19 @@ func (c *GCPCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 }
 
 // New is the function that creates a new GCPCrossplaneRoleChecker.
-func New(logger *log.Logger, envConfig *envconfig.EnvConfig, clientset kubernetes.Interface) *GCPCrossplaneRoleChecker {
+func New(
+	logger *log.Logger,
+	envConfig *envconfig.EnvConfig,
+	clientset kubernetes.Interface,
+	googleCloudSDKDockerRepo string,
+	googleCloudSDKDockerImage string,
+) *GCPCrossplaneRoleChecker {
 	return &GCPCrossplaneRoleChecker{
 		logger:    logger,
 		envConfig: envConfig,
 		clientset: clientset,
+
+		googleCloudSDKDockerRepo:  googleCloudSDKDockerRepo,
+		googleCloudSDKDockerImage: googleCloudSDKDockerImage,
 	}
 }
