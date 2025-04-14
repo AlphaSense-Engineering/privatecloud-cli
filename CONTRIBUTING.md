@@ -11,9 +11,11 @@ The information below is provided for informational purposes only. It is not an 
 
 ### Prerequisites
 
-- Docker
-- Go v1.23.4 or later
-- Task aka Taskfile
+- [Changie](https://changie.dev)
+- [Docker](https://docker.com)
+- [Go](https://go.dev) v1.23.4 or later
+- [GoReleaser](https://goreleaser.com)
+- [Task](https://taskfile.dev)
 
 ### Setting Up
 
@@ -82,7 +84,7 @@ We use **Task** to manage development commands. The following commands are avail
   - **Running the Install Command:**
   
     ```bash
-    task install -- <context> <secrets_file> <first_step_file> <second_step_file> <third_step_file>
+    task install -- <context> [<secrets_file>] <first_step_file> <second_step_file> <third_step_file>
     ```
 
     **N.B.** See available flags by running `task install -- -h`.
@@ -134,7 +136,7 @@ its tasks without needing any additional commands or permissions that would be n
 
 ### Installation Command
 
-The `install` command is designed to install the AlphaSense Enterprise Kubernetes resources from the specified YAML files.
+The `install` command is designed to install the Private Cloud Kubernetes resources from the specified YAML files.
 
 The command performs the following steps:
 
@@ -156,5 +158,10 @@ You can use the following resources for the reference:
 
 ### Commit Messages
 
-This project adheres to the [Conventional Commits](https://conventionalcommits.org/en/v1.0.0/) specification. Please, make sure that your commit messages
+This project adheres to the [Conventional Commits](https://conventionalcommits.org/en/v1.0.0) specification. Please, make sure that your commit messages
 follow that specification.
+
+### Changelog
+
+This project uses [Changie](https://changie.dev) to manage the changelog. Please, make sure to use it when adding a new changelog entry. Do not add a changelog
+entry if the changes are not visible to the end users.
