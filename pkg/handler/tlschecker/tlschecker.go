@@ -24,7 +24,7 @@ var _ handler.Handler = &TLSChecker{}
 // Handle is the function that handles the TLS checking.
 //
 // The arguments are not used.
-// It returns nothing on success, or an error on failure.
+// It returns the TLS secret on success, or an error on failure.
 func (c *TLSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	const (
 		// secretName is the name of the secret that contains the TLS credentials.
@@ -46,7 +46,7 @@ func (c *TLSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, err
 	}
 
-	return nil, nil
+	return []any{secret}, nil
 }
 
 // New is a function that returns a new TLSChecker.
