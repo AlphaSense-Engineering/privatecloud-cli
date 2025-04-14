@@ -38,6 +38,8 @@ var (
 
 // rolePolicyCondition is the struct for the AWS role policy condition.
 type rolePolicyCondition struct {
+	// StringEquals is the string equals of the AWS role policy condition.
+	StringEquals *map[string]*string `json:"StringEquals,omitempty"`
 	// StringLike is the string like of the AWS role policy condition.
 	StringLike *map[string]*string `json:"StringLike,omitempty"`
 }
@@ -226,6 +228,244 @@ var (
 				},
 			},
 		},
+
+		"policy": {
+			Version: aws.String("2012-10-17"),
+			Statement: []*rolePolicyStatement{
+				{
+					Effect: aws.String("Deny"),
+					Action: &[]*string{
+						aws.String("iam:Update*"),
+						aws.String("iam:Put*"),
+						aws.String("iam:DetachRolePolicy"),
+						aws.String("iam:DeleteRolePolicy"),
+						aws.String("iam:AttachRolePolicy"),
+					},
+					Resource: aws.String("arn:aws:iam::${ACCOUNT_ID}:role/web-identity/${CLUSTER_NAME}/crossplane-provider-${CLUSTER_NAME}"),
+					SID:      aws.String("DenyAlteringOwnRole"),
+				},
+				{
+					Effect: aws.String("Deny"),
+					Action: &[]*string{
+						aws.String("iam:SetDefaultPolicyVersion"),
+						aws.String("iam:DeletePolicyVersion"),
+						aws.String("iam:DeletePolicy"),
+						aws.String("iam:CreatePolicyVersion"),
+					},
+					Resource: aws.String("arn:aws:iam::${ACCOUNT_ID}:policy/web-identity/${CLUSTER_NAME}/crossplane-provider-${CLUSTER_NAME}-boundary"),
+					SID:      aws.String("DenyAlteringPermissionsBoundary"),
+				},
+				{
+					Effect: aws.String("Deny"),
+					Action: &[]*string{
+						aws.String("iam:DeleteRolePermissionsBoundary"),
+					},
+					Resource: aws.String("*"),
+					SID:      aws.String("DenyDeletingAnyPermissionsBoundary"),
+				},
+				{
+					Effect: aws.String("Allow"),
+					Action: &[]*string{
+						aws.String("sts:GetCallerIdentity"),
+					},
+					Resource: aws.String("*"),
+					SID:      aws.String("AllowCallSTSToGetCurrentIdentity"),
+				},
+				{
+					Effect: aws.String("Allow"),
+					Action: &[]*string{
+						aws.String("iam:PutRolePolicy"),
+						aws.String("iam:PutRolePermissionsBoundary"),
+						aws.String("iam:DetachRolePolicy"),
+						aws.String("iam:DeleteRolePolicy"),
+						aws.String("iam:CreateRole"),
+						aws.String("iam:AttachRolePolicy"),
+					},
+					Resource: aws.String("arn:aws:iam::${ACCOUNT_ID}:role/web-identity/${CLUSTER_NAME}/crossplane/*"),
+					SID:      aws.String("EnforcePermissionBoundaryOnSpecificIAMActions"),
+					Condition: &rolePolicyCondition{
+						StringEquals: &map[string]*string{
+							"iam:PermissionsBoundary": aws.String(
+								"arn:aws:iam::${ACCOUNT_ID}:policy/web-identity/${CLUSTER_NAME}/crossplane-provider-${CLUSTER_NAME}-boundary",
+							),
+						},
+					},
+				},
+				{
+					Effect: aws.String("Allow"),
+					Action: &[]*string{
+						aws.String("iam:List*"),
+						aws.String("iam:GetRole*"),
+						aws.String("iam:GetPolicy*"),
+					},
+					Resource: aws.String("*"),
+					SID:      aws.String("AllowReadnListAllIAMRolesAndPolicies"),
+				},
+				{
+					Effect: aws.String("Allow"),
+					Action: &[]*string{
+						aws.String("iam:UpdateRoleDescription"),
+						aws.String("iam:UpdateRole"),
+						aws.String("iam:UpdateAssumeRolePolicy"),
+						aws.String("iam:UntagRole"),
+						aws.String("iam:TagRole"),
+						aws.String("iam:ListAttachedRolePolicies"),
+						aws.String("iam:DeleteRole"),
+					},
+					Resource: aws.String("arn:aws:iam::${ACCOUNT_ID}:role/web-identity/${CLUSTER_NAME}/crossplane/*"),
+					SID:      aws.String("AllowCertainIAMActionsWithManagedRoles"),
+				},
+				{
+					Effect: aws.String("Allow"),
+					Action: &[]*string{
+						aws.String("iam:UntagPolicy"),
+						aws.String("iam:TagPolicy"),
+						aws.String("iam:DeletePolicy*"),
+						aws.String("iam:CreatePolicy*"),
+					},
+					Resource: aws.String("arn:aws:iam::${ACCOUNT_ID}:policy/web-identity/${CLUSTER_NAME}/crossplane/*"),
+					SID:      aws.String("AllowCertainIAMActionsWithManagedPolicies"),
+				},
+				{
+					Effect: aws.String("Allow"),
+					Action: &[]*string{
+						aws.String("s3:ReplicateDelete"),
+						aws.String("s3:PutStorageLensConfiguration"),
+						aws.String("s3:PutReplicationConfiguration"),
+						aws.String("s3:PutLifecycleConfiguration"),
+						aws.String("s3:PutIntelligentTieringConfiguration"),
+						aws.String("s3:PutEncryptionConfiguration"),
+						aws.String("s3:PutBucket*"),
+						aws.String("s3:PutAccelerateConfiguration"),
+						aws.String("s3:List*"),
+						aws.String("s3:Get*"),
+						aws.String("s3:DeleteStorageLensConfiguration"),
+						aws.String("s3:CreateBucket"),
+					},
+					Resource: aws.String("*"),
+					SID:      aws.String("AllowS3BucketCreation"),
+				},
+				{
+					Effect: aws.String("Allow"),
+					Action: &[]*string{
+						aws.String("dynamodb:UpdateTimeToLive"),
+						aws.String("dynamodb:UpdateTable"),
+						aws.String("dynamodb:UpdateGlobalTableSettings"),
+						aws.String("dynamodb:UpdateGlobalTable"),
+						aws.String("dynamodb:UpdateContinuousBackups"),
+						aws.String("dynamodb:UntagResource"),
+						aws.String("dynamodb:TagResource"),
+						aws.String("dynamodb:ListTagsOfResource"),
+						aws.String("dynamodb:ListTables"),
+						aws.String("dynamodb:ListStreams"),
+						aws.String("dynamodb:ListImports"),
+						aws.String("dynamodb:ListGlobalTables"),
+						aws.String("dynamodb:ListExports"),
+						aws.String("dynamodb:ListContributorInsights"),
+						aws.String("dynamodb:ListBackups"),
+						aws.String("dynamodb:DescribeTimeToLive"),
+						aws.String("dynamodb:DescribeTable"),
+						aws.String("dynamodb:DescribeContinuousBackups"),
+						aws.String("dynamodb:DeleteTable"),
+						aws.String("dynamodb:CreateTable"),
+						aws.String("dynamodb:CreateGlobalTable"),
+					},
+					Resource: aws.String("*"),
+					SID:      aws.String("AllowDynamoDB"),
+				},
+				{
+					Effect: aws.String("Allow"),
+					Action: &[]*string{
+						aws.String("sns:UntagResource"),
+						aws.String("sns:Unsubscribe"),
+						aws.String("sns:TagResource"),
+						aws.String("sns:Subscribe"),
+						aws.String("sns:SetTopicAttributes"),
+						aws.String("sns:SetSubscriptionAttributes"),
+						aws.String("sns:SetEndpointAttributes"),
+						aws.String("sns:ListTopics"),
+						aws.String("sns:ListTagsForResource"),
+						aws.String("sns:ListSubscriptionsByTopic"),
+						aws.String("sns:ListSubscriptions"),
+						aws.String("sns:ListSMSSandboxPhoneNumbers"),
+						aws.String("sns:ListPlatformApplications"),
+						aws.String("sns:ListOriginationNumbers"),
+						aws.String("sns:ListEndpointsByPlatformApplication"),
+						aws.String("sns:GetTopicAttributes"),
+						aws.String("sns:GetSubscriptionAttributes"),
+						aws.String("sns:GetEndpointAttributes"),
+						aws.String("sns:DeleteTopic"),
+						aws.String("sns:DeleteEndpoint"),
+						aws.String("sns:CreateTopic"),
+						aws.String("sns:ConfirmSubscription"),
+					},
+					Resource: aws.String("*"),
+					SID:      aws.String("AllowSNS"),
+				},
+				{
+					Effect: aws.String("Allow"),
+					Action: &[]*string{
+						aws.String("sqs:UntagQueue"),
+						aws.String("sqs:TagQueue"),
+						aws.String("sqs:SetQueueAttributes"),
+						aws.String("sqs:ReceiveMessage"),
+						aws.String("sqs:ListQueues"),
+						aws.String("sqs:ListQueueTags"),
+						aws.String("sqs:ListDeadLetterSourceQueues"),
+						aws.String("sqs:GetQueueUrl"),
+						aws.String("sqs:GetQueueAttributes"),
+						aws.String("sqs:DeleteQueue"),
+						aws.String("sqs:CreateQueue"),
+					},
+					Resource: aws.String("*"),
+					SID:      aws.String("AllowSQS"),
+				},
+				{
+					Effect: aws.String("Allow"),
+					Action: &[]*string{
+						aws.String("rds:Create*"),
+					},
+					Resource: aws.String("*"),
+					SID:      aws.String("AllowTagRestrictedDBCreate"),
+					Condition: &rolePolicyCondition{
+						StringEquals: &map[string]*string{
+							"aws:RequestTag/crossplane-managed": aws.String("true"),
+						},
+					},
+				},
+				{
+					Effect: aws.String("Allow"),
+					Action: &[]*string{
+						aws.String("rds:Describe*"),
+					},
+					Resource: aws.String("*"),
+					SID:      aws.String("AllowAllDBRead"),
+				},
+				{
+					Effect: aws.String("Allow"),
+					Action: &[]*string{
+						aws.String("rds:RemoveTagsFromResource"),
+						aws.String("rds:ListTagsForResource"),
+						aws.String("rds:AddTagsToResource"),
+					},
+					Resource: aws.String("*"),
+					SID:      aws.String("AllowTags"),
+				},
+				{
+					Effect: aws.String("Allow"),
+					Action: &[]*string{
+						aws.String("rds:Modify*"),
+					},
+					Resource: aws.String("*"),
+					SID:      aws.String("AllowCrossplaneToModify"),
+					Condition: &rolePolicyCondition{
+						StringEquals: &map[string]*string{
+							"aws:ResourceTag/crossplane-managed": aws.String("true"),
+						},
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -241,8 +481,8 @@ type AWSCrossplaneRoleChecker struct {
 
 var _ handler.Handler = &AWSCrossplaneRoleChecker{}
 
-// fillPlaceholders is a function that fills the placeholders in the string.
-func (c *AWSCrossplaneRoleChecker) fillPlaceholders(s string) string {
+// fillPlaceholdersString is a function that fills the placeholders in the string.
+func (c *AWSCrossplaneRoleChecker) fillPlaceholdersString(s string) string {
 	const (
 		// clusterNamePlaceholder is the placeholder for the cluster name.
 		clusterNamePlaceholder = "${CLUSTER_NAME}"
@@ -263,27 +503,38 @@ func (c *AWSCrossplaneRoleChecker) fillPlaceholders(s string) string {
 	return s
 }
 
+// fillPlaceholdersMap is a function that fills the placeholders in the map.
+func (c *AWSCrossplaneRoleChecker) fillPlaceholdersMap(m *map[string]*string) *map[string]*string {
+	newMap := make(map[string]*string, len(*m))
+
+	for key, value := range *m {
+		newMap[c.fillPlaceholdersString(key)] = aws.String(c.fillPlaceholdersString(util.Deref(value)))
+	}
+
+	return &newMap
+}
+
 // validatePolicyDocument is a function that validates the AWS policy document.
 //
 // nolint:gocognit
 func (c *AWSCrossplaneRoleChecker) validatePolicyDocument(document rolePolicyDocument, expectedDocument rolePolicyDocument) diff.Changelog {
 	for _, stmt := range expectedDocument.Statement {
 		if stmt.Principal != nil && stmt.Principal.Federated != nil {
-			*stmt.Principal.Federated = c.fillPlaceholders(util.Deref(stmt.Principal.Federated))
+			*stmt.Principal.Federated = c.fillPlaceholdersString(util.Deref(stmt.Principal.Federated))
 		}
 
 		if stmt.Resource != nil {
-			*stmt.Resource = c.fillPlaceholders(util.Deref(stmt.Resource))
+			*stmt.Resource = c.fillPlaceholdersString(util.Deref(stmt.Resource))
 		}
 
-		if stmt.Condition != nil && stmt.Condition.StringLike != nil {
-			newStringLike := make(map[string]*string)
-
-			for key, value := range *stmt.Condition.StringLike {
-				newStringLike[c.fillPlaceholders(key)] = aws.String(c.fillPlaceholders(util.Deref(value)))
+		if stmt.Condition != nil {
+			if stmt.Condition.StringEquals != nil {
+				stmt.Condition.StringEquals = c.fillPlaceholdersMap(stmt.Condition.StringEquals)
 			}
 
-			stmt.Condition.StringLike = &newStringLike
+			if stmt.Condition.StringLike != nil {
+				stmt.Condition.StringLike = c.fillPlaceholdersMap(stmt.Condition.StringLike)
+			}
 		}
 	}
 
@@ -293,8 +544,6 @@ func (c *AWSCrossplaneRoleChecker) validatePolicyDocument(document rolePolicyDoc
 	}
 
 	const (
-		// desiredPathLength is the desired length of the path.
-		desiredPathLength = 4
 		// statementPath is the path to the statement.
 		statementPath = "Statement"
 		// statementPathIndex is the index of the statement path.
@@ -303,8 +552,14 @@ func (c *AWSCrossplaneRoleChecker) validatePolicyDocument(document rolePolicyDoc
 		actionPath = "Action"
 		// notActionPath is the path to the not action.
 		notActionPath = "NotAction"
-		// actionNotActionPathIndex is the index of the action or not action path.
-		actionNotActionPathIndex = 2
+		// conditionPath is the path to the condition.
+		conditionPath = "Condition"
+		// actionNotActionPathLength is the desired length of the path for Action/NotAction.
+		actionNotActionPathLength = 4
+		// conditionPathLength is the desired length of the path for Condition.
+		conditionPathLength = 5
+		// actionNotActionConditionPathIndex is the index of the action or not action or condition path.
+		actionNotActionConditionPathIndex = 2
 	)
 
 	// We need to allow extra items in Action/NotAction, and prohibit removing expected ones.
@@ -312,10 +567,12 @@ func (c *AWSCrossplaneRoleChecker) validatePolicyDocument(document rolePolicyDoc
 	filteredChangelog := changelog[:0]
 
 	for _, change := range changelog {
-		if change.Type == diff.CREATE && (len(change.Path) == desiredPathLength &&
-			change.Path[statementPathIndex] == statementPath &&
-			(change.Path[actionNotActionPathIndex] == actionPath || change.Path[actionNotActionPathIndex] == notActionPath)) {
-			continue
+		if change.Type == diff.CREATE && change.Path[statementPathIndex] == statementPath {
+			if (len(change.Path) == actionNotActionPathLength &&
+				(change.Path[actionNotActionConditionPathIndex] == actionPath || change.Path[actionNotActionConditionPathIndex] == notActionPath)) ||
+				(len(change.Path) == conditionPathLength && change.Path[actionNotActionConditionPathIndex] == conditionPath) {
+				continue
+			}
 		}
 
 		filteredChangelog = append(filteredChangelog, change)
