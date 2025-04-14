@@ -18,6 +18,14 @@ import (
 // errKubectlNotAvailable is the error that is returned when kubectl is not available in PATH.
 var errKubectlNotAvailable = errors.New("kubectl is not available in PATH")
 
+const (
+	// minArgsCount is the minimum number of arguments the command expects.
+	minArgsCount = 4
+
+	// maxArgsCount is the maximum number of arguments the command expects.
+	maxArgsCount = 5
+)
+
 // logMsgSleeping is the message that is logged when sleeping for a given amount of time.
 const logMsgSleeping = "sleeping for %s"
 
@@ -41,7 +49,7 @@ var (
 	// constPhasesToWaitFor is the list of phases to wait for to proceed to the third step of the installation.
 	//
 	// Do not modify this variable, it is supposed to be constant.
-	constPhasesToWaitFor = append([]string{"Deploying", "ConfigureSolr", "Bootstrap"}, constPhasesToWaitForCompleted...)
+	constPhasesToWaitFor = append([]string{"Deploying", "ConfiguringSolr", "Bootstrap"}, constPhasesToWaitForCompleted...)
 
 	// constPhasesToWaitForCompleted is the list of phases to wait for to consider the installation completed.
 	//
@@ -49,7 +57,7 @@ var (
 	constPhasesToWaitForCompleted = []string{"Ready"}
 )
 
-// installCmd is the command to install AlphaSense Enterprise Kubernetes resources from the YAML files.
+// installCmd is the command to install Private Cloud Kubernetes resources from the YAML files.
 type installCmd struct {
 	// logger is the logger.
 	logger *log.Logger
@@ -78,7 +86,25 @@ func (c *installCmd) run(cobraCmd *cobra.Command, args []string) {
 
 	c.logger.Info(logMsgInstallationStarted)
 
-	firstStepFile := args[2]
+	context := args[0]
+
+	var secretsFile *string
+
+	var firstStepFile, secondStepFile, thirdStepFile string
+
+	firstStepFileIndex := 1
+
+	if len(args) == maxArgsCount {
+		secretsFile = &args[1]
+
+		firstStepFileIndex = 2
+	}
+
+	firstStepFile = args[firstStepFileIndex]
+
+	secondStepFile = args[firstStepFileIndex+1]
+
+	thirdStepFile = args[firstStepFileIndex+2]
 
 	if !util.FlagBool(cobraCmd, flagForce) {
 		c.checkCmd.run(cobraCmd, []string{firstStepFile})
@@ -89,14 +115,6 @@ func (c *installCmd) run(cobraCmd *cobra.Command, args []string) {
 	}
 
 	c.logger.Debug(logMsgKubectlChecked)
-
-	context := args[0]
-
-	secretsFile := args[1]
-
-	secondStepFile := args[3]
-
-	thirdStepFile := args[4]
 
 	if err := util.Exec(c.logger, nil, kubectlBin, "config", "use-context", context); err != nil {
 		c.logger.Fatal(err)
@@ -110,8 +128,10 @@ func (c *installCmd) run(cobraCmd *cobra.Command, args []string) {
 		countTwice = 2
 	)
 
-	if err := c.applyFile(secretsFile, countOnce); err != nil {
-		c.logger.Fatal(err)
+	if secretsFile != nil {
+		if err := c.applyFile(*secretsFile, countOnce); err != nil {
+			c.logger.Fatal(err)
+		}
 	}
 
 	if err := c.applyFile(firstStepFile, countTwice); err != nil {
@@ -246,22 +266,19 @@ func newInstallCmd(logger *log.Logger, cobraCmd *cobra.Command) *installCmd {
 	}
 }
 
-// Install returns a Cobra command to install AlphaSense Enterprise Kubernetes resources from the YAML files.
+// Install returns a Cobra command to install Private Cloud Kubernetes resources from the YAML files.
 func Install(logger *log.Logger) *cobra.Command {
-	// argsCount is the number of arguments the command expects.
-	const argsCount = 5
-
 	cobraCmd := &cobra.Command{
-		Use:   "install <context> <secrets_file> <first_step_file> <second_step_file> <third_step_file>",
-		Short: "Install AlphaSense Enterprise",
-		Args:  cobra.ExactArgs(argsCount),
+		Use:   "install <context> [<secrets_file>] <first_step_file> <second_step_file> <third_step_file>",
+		Short: "Install Private Cloud",
+		Args:  cobra.RangeArgs(minArgsCount, maxArgsCount),
 	}
 
 	cmd := newInstallCmd(logger, cobraCmd)
 
 	cmd.checkCmd = newCheckCmd(logger, cobraCmd)
 
-	cobraCmd.Long = cmd.checkCmd.longMsg("Install installs AlphaSense Enterprise Kubernetes resources from the specified YAML files.")
+	cobraCmd.Long = cmd.checkCmd.longMsg("Install installs Private Cloud Kubernetes resources from the specified YAML files.")
 
 	cobraCmd.Run = cmd.run
 
