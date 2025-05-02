@@ -13,7 +13,7 @@ The information below is provided for informational purposes only. It is not an 
 
 - [Changie](https://changie.dev)
 - [Docker](https://docker.com)
-- [Go](https://go.dev) v1.23.4 or later
+- [Go](https://go.dev) v1.24.2 or later
 - [GoReleaser](https://goreleaser.com)
 - [Task](https://taskfile.dev)
 
