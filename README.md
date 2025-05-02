@@ -18,7 +18,7 @@ For simplicity, AlphaSense Enterprise Intelligence Private Cloud will be referre
 - Ensure you have the necessary permissions to assign the following permissions to a `ClusterRole`:
   - Access to `storageclasses` in the `storage.k8s.io` group with all actions allowed.
   - Access to `nodes` with all actions allowed.
-- If you prefer to compile the project from source, [Go](https://go.dev) v1.23.4 or later must be installed.
+- If you prefer to compile the project from source, [Go](https://go.dev) v1.24.2 or later must be installed.
 
 ## Compatibility
 
