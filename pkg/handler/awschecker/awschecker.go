@@ -114,7 +114,7 @@ func (c *AWSChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, multierr.Combine(crossplanerolechecker.ErrFailedToCheckCrossplaneRole, err)
 	}
 
-	c.logger.Info(crossplanerolechecker.LogMsgCrossplaneRoleChecked)
+	c.logger.Info(crossplanerolechecker.LogMsgCrossplaneRoleCheckedSuccessfully)
 
 	return nil, nil
 }
