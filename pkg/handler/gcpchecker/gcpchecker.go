@@ -52,7 +52,7 @@ func (c *GCPChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, crossplanerolechecker.ErrFailedToCheckCrossplaneRole
 	}
 
-	c.logger.Info(crossplanerolechecker.LogMsgCrossplaneRoleChecked)
+	c.logger.Info(crossplanerolechecker.LogMsgCrossplaneRoleCheckedSuccessfully)
 
 	return nil, nil
 }
