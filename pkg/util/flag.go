@@ -28,17 +28,30 @@ func PersistentFlag(cmd *cobra.Command, name string) string {
 	return flagVal(cmd.PersistentFlags().Lookup(name))
 }
 
-// FlagBool returns the value of the flag as a bool, or false if the flag is not set.
+// FlagBool returns the value of the flag as a bool or the default value if the flag is not a boolean.
 func FlagBool(cmd *cobra.Command, name string) bool {
-	val := flagVal(cmd.Flag(name))
-	if val == constant.EmptyString {
-		return false
-	}
+	flag := cmd.Flag(name)
+
+	val := flagVal(flag)
 
 	boolValue, err := strconv.ParseBool(val)
 	if err != nil {
-		return false
+		return DiscardErr(strconv.ParseBool(flag.DefValue))
 	}
 
 	return boolValue
+}
+
+// FlagInt returns the value of the flag as an int or the default value if the flag is not an integer.
+func FlagInt(cmd *cobra.Command, name string) int {
+	flag := cmd.Flag(name)
+
+	val := flagVal(flag)
+
+	intValue, err := strconv.Atoi(val)
+	if err != nil {
+		return DiscardErr(strconv.Atoi(flag.DefValue))
+	}
+
+	return intValue
 }
