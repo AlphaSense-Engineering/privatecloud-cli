@@ -15,8 +15,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// errKubectlNotAvailable is the error that is returned when kubectl is not available in PATH.
-var errKubectlNotAvailable = errors.New("kubectl is not available in PATH")
+var (
+	// errKubectlNotAvailable is the error that is returned when kubectl is not available in PATH.
+	errKubectlNotAvailable = errors.New("kubectl is not available in PATH")
+
+	// errInvalidStep is the error that is returned when the step is invalid.
+	errInvalidStep = errors.New("invalid step: must be 2 or 3")
+)
 
 const (
 	// minArgsCount is the minimum number of arguments the command expects.
@@ -32,9 +37,11 @@ const logMsgSleeping = "sleeping for %s"
 const (
 	// flagForce is the name of the flag for the force flag.
 	flagForce = "force"
-
 	// flagForceShort is the short name of the flag for the force flag.
 	flagForceShort = "f"
+
+	// flagStep is the name of the flag for the step flag.
+	flagStep = "step"
 )
 
 // kubectlBin is the binary name for kubectl.
@@ -128,20 +135,31 @@ func (c *installCmd) run(cobraCmd *cobra.Command, args []string) {
 		countTwice = 2
 	)
 
-	if secretsFile != nil {
-		if err := c.applyFile(*secretsFile, countOnce); err != nil {
+	step := util.FlagInt(cobraCmd, flagStep)
+
+	// Step is 0 if the flag is not set, so we don't return an error in that case.
+	if step != 0 && step != 2 && step != 3 {
+		c.logger.Fatal(errInvalidStep)
+	}
+
+	if step == 0 || (step != 2 && step != 3) {
+		if secretsFile != nil {
+			if err := c.applyFile(*secretsFile, countOnce); err != nil {
+				c.logger.Fatal(err)
+			}
+		}
+
+		if err := c.applyFile(firstStepFile, countTwice); err != nil {
 			c.logger.Fatal(err)
 		}
 	}
 
-	if err := c.applyFile(firstStepFile, countTwice); err != nil {
-		c.logger.Fatal(err)
-	}
+	if step == 0 || (step == 2 && step != 3) {
+		c.waitForPhases(constPhasesToWaitForWithCrossplane)
 
-	c.waitForPhases(constPhasesToWaitForWithCrossplane)
-
-	if err := c.applyFile(secondStepFile, countOnce); err != nil {
-		c.logger.Fatal(err)
+		if err := c.applyFile(secondStepFile, countOnce); err != nil {
+			c.logger.Fatal(err)
+		}
 	}
 
 	c.waitForPhases(constPhasesToWaitFor)
@@ -200,8 +218,8 @@ func (c *installCmd) applyFile(file string, count int) error {
 // waitForPhases is the function that waits for the phase of the EnvConfig to be one of the phases in the list.
 func (c *installCmd) waitForPhases(phases []string) {
 	const (
-		// logMsgWaitingForPhases is the message that is logged when waiting for the EnvConfig to be in any of the following phases.
-		logMsgWaitingForPhases = "waiting for EnvConfig to be in any of the following phases: %s (current phase: %s)"
+		// logMsgWaitingForPhases is the message that is logged when waiting for the EnvConfig to be in any of the specified phases.
+		logMsgWaitingForPhases = "waiting for environment to be in any of the following phases: %s (current phase: %s)"
 
 		// logMsgCouldNotFindEnvConfig is the message that is logged when the EnvConfig is not found.
 		logMsgCouldNotFindEnvConfig = "could not find EnvConfig"
@@ -244,7 +262,7 @@ func (c *installCmd) waitForPhases(phases []string) {
 
 		phase := data.Items[0].Status.Phase
 
-		c.logger.Debugf(logMsgWaitingForPhases, phases, phase)
+		c.logger.Infof(logMsgWaitingForPhases, strings.Join(phases, ", "), phase)
 
 		if slices.Contains(phases, phase) {
 			c.logger.Debugf(logMsgGotPhase, phase)
@@ -283,6 +301,7 @@ func Install(logger *log.Logger) *cobra.Command {
 	cobraCmd.Run = cmd.run
 
 	cobraCmd.Flags().BoolP(flagForce, flagForceShort, false, "force the installation")
+	cobraCmd.Flags().Int(flagStep, 0, "the installation step to begin from; valid values are 2 or 3")
 
 	cmd.checkCmd.flags(false)
 

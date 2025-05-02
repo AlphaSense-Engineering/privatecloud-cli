@@ -5,3 +5,8 @@ package util
 func Identity[T any](value T) T {
 	return value
 }
+
+// DiscardErr is a function that takes a value of any type and an error, and returns the value while discarding the error.
+func DiscardErr[T any](value T, _ error) T {
+	return value
+}
