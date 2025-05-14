@@ -676,13 +676,9 @@ func (c *checkCmd) flags(shouldAddCleanupOnlyFlag bool) {
 	}
 
 	c.cobraCmd.Flags().String(flagDockerRepo, defaultDockerRepo, "the Docker repository to use for the Pod image")
-
 	c.cobraCmd.Flags().String(flagDockerImage, defaultDockerImage, "the Docker image to use for the Pod")
-
 	c.cobraCmd.Flags().String(flagImagePullSecret, constant.EmptyString, "the name of the image pull secret to use for the Pod")
-
 	c.cobraCmd.Flags().String(flagGoogleCloudSDKDockerRepo, defaultGoogleCloudSDKDockerRepo, "the Docker repository to use for the Google Cloud SDK image")
-
 	c.cobraCmd.Flags().String(flagGoogleCloudSDKDockerImage, defaultGoogleCloudSDKDockerImage, "the Docker image to use for the Google Cloud SDK")
 }
 

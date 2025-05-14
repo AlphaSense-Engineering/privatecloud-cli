@@ -42,6 +42,8 @@ const (
 
 	// flagStep is the name of the flag for the step flag.
 	flagStep = "step"
+	// flagSkipStep is the name of the flag for the skip step flag.
+	flagSkipStep = "skip-step"
 )
 
 // kubectlBin is the binary name for kubectl.
@@ -78,7 +80,7 @@ var _ cmd = &installCmd{}
 
 // run is the run function for the Install command.
 //
-// nolint:funlen
+// nolint:funlen,gocognit
 func (c *installCmd) run(cobraCmd *cobra.Command, args []string) {
 	const (
 		// logMsgInstallationStarted is the message that is logged when the installation is started.
@@ -136,12 +138,14 @@ func (c *installCmd) run(cobraCmd *cobra.Command, args []string) {
 	)
 
 	step := util.FlagInt(cobraCmd, flagStep)
+	skipStep := util.FlagInt(cobraCmd, flagSkipStep)
 
 	// Step is 0 if the flag is not set, so we don't return an error in that case.
 	if step != 0 && step != 2 && step != 3 {
 		c.logger.Fatal(errInvalidStep)
 	}
 
+	// nolint:nestif
 	if step == 0 || (step != 2 && step != 3) {
 		if secretsFile != nil {
 			if err := c.applyFile(*secretsFile, countOnce); err != nil {
@@ -149,26 +153,36 @@ func (c *installCmd) run(cobraCmd *cobra.Command, args []string) {
 			}
 		}
 
-		if err := c.applyFile(firstStepFile, countTwice); err != nil {
-			c.logger.Fatal(err)
+		if skipStep != 1 {
+			if err := c.applyFile(firstStepFile, countTwice); err != nil {
+				c.logger.Fatal(err)
+			}
+
+			c.waitForPhases(constPhasesToWaitForWithCrossplane)
 		}
 	}
 
-	if step == 0 || (step == 2 && step != 3) {
+	// nolint:nestif
+	if (step == 0 || (step == 2 && step != 3)) && skipStep != 2 {
 		c.waitForPhases(constPhasesToWaitForWithCrossplane)
 
 		if err := c.applyFile(secondStepFile, countOnce); err != nil {
 			c.logger.Fatal(err)
 		}
+
+		c.waitForPhases(constPhasesToWaitFor)
 	}
 
-	c.waitForPhases(constPhasesToWaitFor)
+	// nolint:mnd
+	if skipStep != 3 {
+		c.waitForPhases(constPhasesToWaitFor)
 
-	if err := c.applyFile(thirdStepFile, countOnce); err != nil {
-		c.logger.Fatal(err)
+		if err := c.applyFile(thirdStepFile, countOnce); err != nil {
+			c.logger.Fatal(err)
+		}
+
+		c.waitForPhases(constPhasesToWaitForCompleted)
 	}
-
-	c.waitForPhases(constPhasesToWaitForCompleted)
 
 	c.logger.Info(logMsgInstallationCompleted)
 }
@@ -302,6 +316,7 @@ func Install(logger *log.Logger) *cobra.Command {
 
 	cobraCmd.Flags().BoolP(flagForce, flagForceShort, false, "force the installation")
 	cobraCmd.Flags().Int(flagStep, 0, "the installation step to begin from; valid values are 2 or 3")
+	cobraCmd.Flags().Int(flagSkipStep, 0, "the installation step to skip; valid values are 1, 2 or 3")
 
 	cmd.checkCmd.flags(false)
 
