@@ -8,9 +8,9 @@ require (
 	github.com/MicahParks/jwkset v0.9.6
 	github.com/MicahParks/keyfunc/v3 v3.4.0
 	github.com/aws/aws-sdk-go-v2 v1.36.3
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.67
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.68
 	github.com/aws/aws-sdk-go-v2/service/iam v1.42.0
-	github.com/aws/aws-sdk-go-v2/service/sts v1.33.19
+	github.com/aws/aws-sdk-go-v2/service/sts v1.33.20
 	github.com/charmbracelet/log v0.4.2
 	github.com/go-sql-driver/mysql v1.9.2
 	github.com/golang-jwt/jwt/v5 v5.2.2
