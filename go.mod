@@ -9,7 +9,7 @@ require (
 	github.com/MicahParks/keyfunc/v3 v3.4.0
 	github.com/aws/aws-sdk-go-v2 v1.36.5
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.70
-	github.com/aws/aws-sdk-go-v2/service/iam v1.42.2
+	github.com/aws/aws-sdk-go-v2/service/iam v1.43.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.34.0
 	github.com/charmbracelet/log v0.4.2
 	github.com/go-sql-driver/mysql v1.9.3
