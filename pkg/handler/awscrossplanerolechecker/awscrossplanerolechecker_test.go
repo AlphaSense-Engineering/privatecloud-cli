@@ -699,6 +699,7 @@ func Test_validatePolicyDocument(t *testing.T) {
 						Action: &[]*string{
 							aws.String("ec2:DescribeSecurityGroups"),
 							aws.String("ec2:DescribeSecurityGroupRules"),
+							aws.String("ec2:ModifySecurityGroupRules"),
 							aws.String("ec2:CreateSecurityGroup"),
 							aws.String("ec2:DeleteSecurityGroup"),
 							aws.String("ec2:AuthorizeSecurityGroupIngress"),
