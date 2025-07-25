@@ -1,0 +1,3 @@
+kind: changed
+body: Allow custom naming for main and Redis policies during AWS Crossplane role check
+time: 2025-07-25T16:25:32.7846+03:00

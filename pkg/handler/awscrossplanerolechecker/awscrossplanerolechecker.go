@@ -158,6 +158,19 @@ type rolePolicyDocument struct {
 	Statement []*rolePolicyStatement `json:"Statement,omitempty"`
 }
 
+// boundaryPolicyDocumentSuffix is the suffix of the boundary policy document.
+const boundaryPolicyDocumentSuffix = "boundary"
+
+// expectedPolicyDocumentIndex is a type alias for int, representing the index of a policy document in the constExpectedPolicyDocuments slice.
+type expectedPolicyDocumentIndex int
+
+const (
+	// mainPolicyDocumentIndex is the index of the main policy document in the constExpectedPolicyDocuments slice.
+	mainPolicyDocumentIndex expectedPolicyDocumentIndex = iota
+	// redisPolicyDocumentIndex is the index of the redis policy document in the constExpectedPolicyDocuments slice.
+	redisPolicyDocumentIndex
+)
+
 var (
 	// constExpectedAssumeRolePolicyDocument is the expected AWS assume role policy document.
 	//
@@ -184,52 +197,57 @@ var (
 		},
 	}
 
+	// constExpectedBoundaryPolicyDocument is the expected AWS boundary policy document.
+	//
+	// This is listed at https://developer.alpha-sense.com/enterprise/technical-requirements/aws.
+	//
+	// Do not modify this variable, it is supposed to be constant.
+	constExpectedBoundaryPolicyDocument = rolePolicyDocument{
+		Version: aws.String("2012-10-17"),
+		Statement: []*rolePolicyStatement{
+			{
+				Effect: aws.String("Allow"),
+				NotAction: &[]*string{
+					aws.String("support:*"),
+					aws.String("organizations:*"),
+					aws.String("iam:Upload*"),
+					aws.String("iam:Update*"),
+					aws.String("iam:Untag*"),
+					aws.String("iam:Tag*"),
+					aws.String("iam:Set*"),
+					aws.String("iam:Resync*"),
+					aws.String("iam:Reset*"),
+					aws.String("iam:Remove*"),
+					aws.String("iam:Put*"),
+					aws.String("iam:PassRole"),
+					aws.String("iam:ListVirtualMFA*"),
+					aws.String("iam:ListMFA*"),
+					aws.String("iam:GetOrganizationsAccessReport"),
+					aws.String("iam:GetAccountAuthorizationDetails"),
+					aws.String("iam:Generate*"),
+					aws.String("iam:Enable*"),
+					aws.String("iam:Detach*"),
+					aws.String("iam:Delete*"),
+					aws.String("iam:Deactivate*"),
+					aws.String("iam:Create*"),
+					aws.String("iam:Change*"),
+					aws.String("iam:Attach*"),
+					aws.String("iam:Add*"),
+					aws.String("cloudtrail:DeleteTrail"),
+				},
+				Resource: aws.String("*"),
+				SID:      aws.String("AllowAllActionsApartFromListed"),
+			},
+		},
+	}
+
 	// constAWSPoliciesNameSuffixes is the map of suffixes and the expected policy document for the AWS policies.
 	//
 	// These are listed at https://developer.alpha-sense.com/enterprise/technical-requirements/aws.
 	//
 	// Do not modify this variable, it is supposed to be constant.
-	constExpectedPolicyDocuments = map[string]rolePolicyDocument{
-		"boundary": {
-			Version: aws.String("2012-10-17"),
-			Statement: []*rolePolicyStatement{
-				{
-					Effect: aws.String("Allow"),
-					NotAction: &[]*string{
-						aws.String("support:*"),
-						aws.String("organizations:*"),
-						aws.String("iam:Upload*"),
-						aws.String("iam:Update*"),
-						aws.String("iam:Untag*"),
-						aws.String("iam:Tag*"),
-						aws.String("iam:Set*"),
-						aws.String("iam:Resync*"),
-						aws.String("iam:Reset*"),
-						aws.String("iam:Remove*"),
-						aws.String("iam:Put*"),
-						aws.String("iam:PassRole"),
-						aws.String("iam:ListVirtualMFA*"),
-						aws.String("iam:ListMFA*"),
-						aws.String("iam:GetOrganizationsAccessReport"),
-						aws.String("iam:GetAccountAuthorizationDetails"),
-						aws.String("iam:Generate*"),
-						aws.String("iam:Enable*"),
-						aws.String("iam:Detach*"),
-						aws.String("iam:Delete*"),
-						aws.String("iam:Deactivate*"),
-						aws.String("iam:Create*"),
-						aws.String("iam:Change*"),
-						aws.String("iam:Attach*"),
-						aws.String("iam:Add*"),
-						aws.String("cloudtrail:DeleteTrail"),
-					},
-					Resource: aws.String("*"),
-					SID:      aws.String("AllowAllActionsApartFromListed"),
-				},
-			},
-		},
-
-		"policy": {
+	constExpectedPolicyDocuments = []rolePolicyDocument{
+		{
 			Version: aws.String("2012-10-17"),
 			Statement: []*rolePolicyStatement{
 				{
@@ -467,7 +485,7 @@ var (
 			},
 		},
 
-		"redis": {
+		{
 			Version: aws.String("2012-10-17"),
 			Statement: []*rolePolicyStatement{
 				{
@@ -679,16 +697,8 @@ func (c *AWSCrossplaneRoleChecker) validatePolicyDocument(document rolePolicyDoc
 	return changelog
 }
 
-// processPolicyDocument is a function that processes the AWS policy document.
-func (c *AWSCrossplaneRoleChecker) processPolicyDocument(ctx context.Context, roleName, suffix string, expectedPolicyDocument rolePolicyDocument) error {
-	policyARN := aws.String(awscloudutil.ARN(
-		c.envConfig.Spec.CloudSpec.AWS.AccountID,
-		c.envConfig.Spec.ClusterName,
-		awscloudutil.ARNTypePolicy,
-		roleName,
-		&suffix,
-	))
-
+// processPolicyDocumentByARN processes the AWS policy document for a given policy ARN.
+func (c *AWSCrossplaneRoleChecker) processPolicyDocumentByARN(ctx context.Context, policyARN *string, expectedPolicyDocument rolePolicyDocument) error {
 	policyVersions, err := c.iam.ListPolicyVersions(ctx, &iam.ListPolicyVersionsInput{PolicyArn: policyARN})
 	if err != nil {
 		return err
@@ -740,6 +750,8 @@ func (c *AWSCrossplaneRoleChecker) processPolicyDocument(ctx context.Context, ro
 //
 // The arguments are not used.
 // It returns nothing on success, or an error on failure.
+//
+// nolint:funlen,gocognit
 func (c *AWSCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	roleName := awscloudutil.CrossplaneRoleName(c.envConfig.Spec.ClusterName)
 
@@ -768,9 +780,96 @@ func (c *AWSCrossplaneRoleChecker) Handle(ctx context.Context, _ ...any) ([]any,
 		return nil, pkgerrors.NewErrWithChangelog(errAssumeRolePolicyDocumentMismatch, changelog)
 	}
 
-	for suffix, expectedPolicyDocument := range constExpectedPolicyDocuments {
-		if err := c.processPolicyDocument(ctx, roleName, suffix, expectedPolicyDocument); err != nil {
+	boundaryPolicyARN := aws.String(awscloudutil.ARN(
+		c.envConfig.Spec.CloudSpec.AWS.AccountID,
+		c.envConfig.Spec.ClusterName,
+		awscloudutil.ARNTypePolicy,
+		roleName,
+		aws.String(boundaryPolicyDocumentSuffix),
+	))
+	if err := c.processPolicyDocumentByARN(ctx, boundaryPolicyARN, constExpectedBoundaryPolicyDocument); err != nil {
+		return nil, err
+	}
+
+	attachedPolicies, err := c.iam.ListAttachedRolePolicies(ctx, &iam.ListAttachedRolePoliciesInput{
+		RoleName: aws.String(roleName),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// If there are more attached policies than expected, we don't know which ones to check as the setup is not deterministic.
+	if len(attachedPolicies.AttachedPolicies) > len(constExpectedPolicyDocuments) {
+		return nil, nil
+	}
+
+	matched := make([]*diff.Changelog, len(constExpectedPolicyDocuments))
+
+	for _, attached := range attachedPolicies.AttachedPolicies {
+		if attached.PolicyArn == nil {
+			continue
+		}
+
+		policyVersions, err := c.iam.ListPolicyVersions(ctx, &iam.ListPolicyVersionsInput{PolicyArn: attached.PolicyArn})
+		if err != nil {
 			return nil, err
+		}
+
+		var defaultVersionID *string
+
+		for _, version := range policyVersions.Versions {
+			if version.IsDefaultVersion {
+				defaultVersionID = version.VersionId
+
+				break
+			}
+		}
+
+		if defaultVersionID == nil {
+			continue
+		}
+
+		policyVersion, err := c.iam.GetPolicyVersion(ctx, &iam.GetPolicyVersionInput{PolicyArn: attached.PolicyArn, VersionId: defaultVersionID})
+		if err != nil {
+			return nil, err
+		}
+
+		if policyVersion.PolicyVersion == nil || policyVersion.PolicyVersion.Document == nil {
+			continue
+		}
+
+		var policyDocument rolePolicyDocument
+
+		policyDocumentData, err := url.QueryUnescape(*policyVersion.PolicyVersion.Document)
+		if err != nil {
+			continue
+		}
+
+		if err = json.Unmarshal([]byte(policyDocumentData), &policyDocument); err != nil {
+			continue
+		}
+
+		for j, expected := range constExpectedPolicyDocuments {
+			if matched[j] != nil {
+				continue
+			}
+
+			changelog := c.validatePolicyDocument(policyDocument, expected)
+
+			if len(changelog) == 0 {
+				break
+			} else if matched[j] == nil {
+				matched[j] = &changelog
+			}
+		}
+	}
+
+	for _, changelog := range matched {
+		if changelog != nil && len(*changelog) != 0 {
+			return nil, pkgerrors.NewErrWithChangelog(
+				errPolicyDocumentMismatch,
+				*changelog,
+			)
 		}
 	}
 

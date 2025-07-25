@@ -124,7 +124,7 @@ func Test_validatePolicyDocument(t *testing.T) {
 					},
 				},
 			},
-			expectedDocument: constExpectedPolicyDocuments["boundary"],
+			expectedDocument: constExpectedBoundaryPolicyDocument,
 			expected:         true,
 		},
 		{
@@ -168,11 +168,11 @@ func Test_validatePolicyDocument(t *testing.T) {
 					},
 				},
 			},
-			expectedDocument: constExpectedPolicyDocuments["boundary"],
+			expectedDocument: constExpectedBoundaryPolicyDocument,
 			expected:         true,
 		},
 		{
-			name: "Valid Policy Document",
+			name: "Valid Main Policy Document",
 			document: rolePolicyDocument{
 				Version: aws.String("2012-10-17"),
 				Statement: []*rolePolicyStatement{
@@ -408,11 +408,11 @@ func Test_validatePolicyDocument(t *testing.T) {
 					},
 				},
 			},
-			expectedDocument: constExpectedPolicyDocuments["policy"],
+			expectedDocument: constExpectedPolicyDocuments[mainPolicyDocumentIndex],
 			expected:         true,
 		},
 		{
-			name: "Valid Policy Document with Extra Actions and Conditions",
+			name: "Valid Main Policy Document with Extra Actions and Conditions",
 			document: rolePolicyDocument{
 				Version: aws.String("2012-10-17"),
 				Statement: []*rolePolicyStatement{
@@ -669,11 +669,11 @@ func Test_validatePolicyDocument(t *testing.T) {
 					},
 				},
 			},
-			expectedDocument: constExpectedPolicyDocuments["policy"],
+			expectedDocument: constExpectedPolicyDocuments[mainPolicyDocumentIndex],
 			expected:         true,
 		},
 		{
-			name: "Invalid Policy Document",
+			name: "Invalid Main Policy Document",
 			document: rolePolicyDocument{
 				Version: aws.String("2012-10-17"),
 				Statement: []*rolePolicyStatement{
@@ -687,7 +687,7 @@ func Test_validatePolicyDocument(t *testing.T) {
 					},
 				},
 			},
-			expectedDocument: constExpectedPolicyDocuments["boundary"],
+			expectedDocument: constExpectedBoundaryPolicyDocument,
 			expected:         false,
 		},
 		{
@@ -787,13 +787,31 @@ func Test_validatePolicyDocument(t *testing.T) {
 					},
 				},
 			},
-			expectedDocument: constExpectedPolicyDocuments["redis"],
+			expectedDocument: constExpectedPolicyDocuments[redisPolicyDocumentIndex],
 			expected:         true,
+		},
+		{
+			name: "Invalid Redis Policy Document",
+			document: rolePolicyDocument{
+				Version: aws.String("2012-10-17"),
+				Statement: []*rolePolicyStatement{
+					{
+						Effect: aws.String("Allow"),
+						Action: &[]*string{
+							aws.String("iam:CreateServiceLinkedRole"),
+						},
+						Resource: aws.String("*"),
+						SID:      aws.String("AllowIAMForServiceLinkedRoles"),
+					},
+				},
+			},
+			expectedDocument: constExpectedPolicyDocuments[redisPolicyDocumentIndex],
+			expected:         false,
 		},
 		{
 			name:             "Empty Policy Document",
 			document:         rolePolicyDocument{},
-			expectedDocument: constExpectedPolicyDocuments["boundary"],
+			expectedDocument: constExpectedBoundaryPolicyDocument,
 			expected:         false,
 		},
 	}
