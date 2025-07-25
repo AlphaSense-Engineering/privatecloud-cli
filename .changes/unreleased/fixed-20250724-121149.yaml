@@ -1,3 +1,0 @@
-kind: fixed
-body: Missing ec2:ModifySecurityGroupRules permission in AWS Crossplane role checker
-time: 2025-07-24T12:11:49.306146+03:00
