@@ -28,7 +28,7 @@ Refer to the compatibility matrix below to determine the appropriate `privateclo
 
 | `privatecloud-cli` Version | Private Cloud Version |
 |----------------------------|-----------------------|
-| v0.2.1 and above           | v2.1.0 and above      |
+| v0.3.0 and above           | v2.1.0 and above      |
 | v0.1.0 and above           | v2.0.1 and above      |
 
 ## Installation
