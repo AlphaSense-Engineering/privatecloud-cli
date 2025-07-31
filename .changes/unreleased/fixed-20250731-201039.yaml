@@ -1,0 +1,3 @@
+kind: fixed
+body: OIDC URL check wouldn't succeed due to lack of certificates in Docker image
+time: 2025-07-31T20:10:39.603685+03:00

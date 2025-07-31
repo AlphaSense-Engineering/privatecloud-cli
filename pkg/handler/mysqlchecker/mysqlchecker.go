@@ -49,9 +49,6 @@ func (c *MySQLChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	const (
 		// secretName is the name of the secret that contains the MySQL credentials.
 		secretName = "default-creds"
-
-		// secretEndpointKey is the key of the endpoint in the secret.
-		secretEndpointKey = "endpoint"
 	)
 
 	secret, err := c.clientset.CoreV1().Secrets(constant.NamespaceMySQL).Get(ctx, secretName, metav1.GetOptions{})
@@ -59,12 +56,12 @@ func (c *MySQLChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, err
 	}
 
-	data := util.ConvertMap[string, []byte, string, string](secret.Data, util.Identity[string], util.ByteSliceToString)
+	data := util.ConvertMap(secret.Data, util.Identity[string], util.ByteSliceToString)
 
 	if err := util.KeysExistAndNotEmptyOrErr(data, []string{
 		constant.SecretUsernameKey,
 		constant.SecretPasswordKey,
-		secretEndpointKey,
+		constant.SecretEndpointKey,
 		constant.SecretPortKey,
 	}); err != nil {
 		return nil, err
@@ -75,7 +72,7 @@ func (c *MySQLChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	cfg.User = data[constant.SecretUsernameKey]
 	cfg.Passwd = data[constant.SecretPasswordKey]
 	cfg.Net = "tcp"
-	cfg.Addr = fmt.Sprintf("%s:%s", data[secretEndpointKey], data[constant.SecretPortKey])
+	cfg.Addr = fmt.Sprintf("%s:%s", data[constant.SecretEndpointKey], data[constant.SecretPortKey])
 
 	db, err := sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {

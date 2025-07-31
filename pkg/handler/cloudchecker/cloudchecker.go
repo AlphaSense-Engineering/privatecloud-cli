@@ -12,6 +12,7 @@ import (
 	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler/mysqlchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler/nodegroupchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler/oidcchecker"
+	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler/postgresqlchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler/smtpchecker"
 	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler/ssochecker"
 	"github.com/AlphaSense-Engineering/privatecloud-cli/pkg/handler/storageclasschecker"
@@ -28,6 +29,9 @@ var (
 
 	// ErrFailedToCheckMySQL is the error that occurs when the MySQL is not checked.
 	ErrFailedToCheckMySQL = errors.New("failed to check MySQL")
+
+	// ErrFailedToCheckPostgreSQL is the error that occurs when the PostgreSQL is not checked.
+	ErrFailedToCheckPostgreSQL = errors.New("failed to check PostgreSQL")
 
 	// ErrFailedToCheckTLS is the error that occurs when the TLS is not checked.
 	ErrFailedToCheckTLS = errors.New("failed to check TLS")
@@ -62,6 +66,8 @@ type CloudChecker struct {
 
 	// mySQLChecker is the MySQL checker.
 	mySQLChecker *mysqlchecker.MySQLChecker
+	// postgresqlChecker is the PostgreSQL checker.
+	postgresqlChecker *postgresqlchecker.PostgreSQLChecker
 	// tlsChecker is the TLS checker.
 	tlsChecker *tlschecker.TLSChecker
 	// smtpChecker is the SMTP checker.
@@ -82,6 +88,8 @@ func (c *CloudChecker) setup() {
 	c.nodeGroupChecker = nodegroupchecker.New(c.clientset)
 
 	c.mySQLChecker = mysqlchecker.New(c.clientset)
+
+	c.postgresqlChecker = postgresqlchecker.New(c.clientset)
 
 	c.tlsChecker = tlschecker.New(c.clientset)
 
@@ -114,6 +122,9 @@ func (c *CloudChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		// logMsgMySQLCheckedSuccessfully is the message that is logged when the MySQL is checked successfully.
 		logMsgMySQLCheckedSuccessfully = "checked MySQL successfully"
 
+		// logMsgPostgreSQLCheckedSuccessfully is the message that is logged when the PostgreSQL is checked successfully.
+		logMsgPostgreSQLCheckedSuccessfully = "checked PostgreSQL successfully"
+
 		// logMsgTLSCheckedSuccessfully is the message that is logged when the TLS is checked successfully.
 		logMsgTLSCheckedSuccessfully = "checked TLS successfully"
 
@@ -144,6 +155,12 @@ func (c *CloudChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 	}
 
 	c.logger.Info(logMsgMySQLCheckedSuccessfully)
+
+	if _, err := c.postgresqlChecker.Handle(ctx); err != nil {
+		return nil, multierr.Combine(ErrFailedToCheckPostgreSQL, err)
+	}
+
+	c.logger.Info(logMsgPostgreSQLCheckedSuccessfully)
 
 	if _, err := c.tlsChecker.Handle(ctx); err != nil {
 		return nil, multierr.Combine(ErrFailedToCheckTLS, err)

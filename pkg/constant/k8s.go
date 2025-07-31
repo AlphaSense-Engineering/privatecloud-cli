@@ -13,6 +13,9 @@ const (
 
 	// NamespacePlatform is the namespace for the platform.
 	NamespacePlatform = "platform"
+
+	// NamespacePostgres is the namespace for the PostgreSQL.
+	NamespacePostgres = "postgres"
 )
 
 const (
@@ -32,6 +35,9 @@ const (
 
 	// SecretPasswordKey is the key of the password in the secret.
 	SecretPasswordKey = "password"
+
+	// SecretEndpointKey is the key of the endpoint in the secret.
+	SecretEndpointKey = "endpoint"
 
 	// SecretPortKey is the key of the port in the secret.
 	SecretPortKey = "port"

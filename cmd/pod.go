@@ -99,6 +99,14 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 		// nolint:gosec
 		docsMySQLSecrets = "https://developer.alpha-sense.com/enterprise/technical-requirements/#mysql-secrets"
 
+		// docsPostgreSQLDatabaseCluster is the URL to the documentation for PostgreSQL database cluster.
+		docsPostgreSQLDatabaseCluster = "https://developer.alpha-sense.com/enterprise/technical-requirements/#postgresql-database-cluster"
+
+		// docsPostgreSQLSecrets is the URL to the documentation for PostgreSQL secrets.
+		//
+		// nolint:gosec
+		docsPostgreSQLSecrets = "https://developer.alpha-sense.com/enterprise/technical-requirements/#postgresql-secrets"
+
 		// docsTLSSecrets is the URL to the documentation for TLS secrets.
 		//
 		// nolint:gosec
@@ -217,6 +225,7 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 		docMap := map[error][]string{
 			cloudchecker.ErrFailedToCheckStorageClass: {docsPersistentVolumes},
 			cloudchecker.ErrFailedToCheckMySQL:        {docsMySQLDatabaseCluster, docsMySQLSecrets},
+			cloudchecker.ErrFailedToCheckPostgreSQL:   {docsPostgreSQLDatabaseCluster, docsPostgreSQLSecrets},
 			cloudchecker.ErrFailedToCheckTLS:          {docsTLSSecrets},
 			cloudchecker.ErrFailedToCheckSMTP:         {docsSMTPSecrets},
 			cloudchecker.ErrFailedToCheckSSO:          {docsSSOSecrets},
@@ -238,12 +247,14 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 		}
 
 		if docs, exists := docMap[targetErr]; exists {
-			c.logRelatedDocumentation(docs...)
-		} else if errors.Is(err, cloudchecker.ErrFailedToCheckOIDCURL) {
-			if vcloud == cloud.AWS {
-				c.logRelatedDocumentation(docsAWSOIDC)
-			} else if vcloud == cloud.Azure {
-				c.logRelatedDocumentation(docsAzureCrossplaneMI)
+			if errors.Is(err, cloudchecker.ErrFailedToCheckOIDCURL) {
+				if vcloud == cloud.AWS {
+					c.logRelatedDocumentation(docsAWSOIDC)
+				} else if vcloud == cloud.Azure {
+					c.logRelatedDocumentation(docsAzureCrossplaneMI)
+				}
+			} else {
+				c.logRelatedDocumentation(docs...)
 			}
 		}
 

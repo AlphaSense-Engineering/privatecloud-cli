@@ -34,7 +34,7 @@ func (c *SSOChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 		return nil, err
 	}
 
-	data := util.ConvertMap[string, []byte, string, string](secret.Data, util.Identity[string], util.ByteSliceToString)
+	data := util.ConvertMap(secret.Data, util.Identity[string], util.ByteSliceToString)
 
 	if err := util.KeysExistAndNotEmptyOrErr(data, []string{"saml-entityid"}); err != nil {
 		return nil, err

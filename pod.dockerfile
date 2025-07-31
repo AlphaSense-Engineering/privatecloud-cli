@@ -1,5 +1,5 @@
-FROM scratch
+FROM alpine:latest
 
-COPY privatecloud-cli /
+COPY privatecloud-cli /usr/local/bin/privatecloud-cli
 
-ENTRYPOINT ["/privatecloud-cli", "pod"]
+ENTRYPOINT ["/usr/local/bin/privatecloud-cli", "pod"]

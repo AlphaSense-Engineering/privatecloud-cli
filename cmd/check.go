@@ -96,6 +96,7 @@ var constRoleNamespaces = []string{
 	constant.NamespaceAlphaSense,
 	constant.NamespaceCrossplane,
 	constant.NamespaceMySQL,
+	constant.NamespacePostgres,
 	constant.NamespacePlatform,
 }
 
@@ -188,6 +189,9 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"serviceaccounts/token"}, Verbs: []string{rbacv1.VerbAll}},
 		}},
 		{constant.NamespaceMySQL, []rbacv1.PolicyRule{
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{"secrets"}, Verbs: []string{rbacv1.VerbAll}}},
+		},
+		{constant.NamespacePostgres, []rbacv1.PolicyRule{
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"secrets"}, Verbs: []string{rbacv1.VerbAll}}},
 		},
 		{constant.NamespacePlatform, []rbacv1.PolicyRule{
