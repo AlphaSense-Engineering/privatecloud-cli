@@ -3,10 +3,10 @@ module github.com/AlphaSense-Engineering/privatecloud-cli
 go 1.24.2
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.12.0
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization v1.0.0
 	github.com/MicahParks/jwkset v0.11.0
-	github.com/MicahParks/keyfunc/v3 v3.6.2
+	github.com/MicahParks/keyfunc/v3 v3.7.0
 	github.com/aws/aws-sdk-go-v2 v1.39.2
 	github.com/aws/aws-sdk-go-v2/credentials v1.18.16
 	github.com/aws/aws-sdk-go-v2/service/iam v1.47.7
