@@ -171,6 +171,9 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 
 		// logMsgClusterRoleCreated is the message that is logged when the cluster role is created.
 		logMsgClusterRoleCreated = "created %s ClusterRole"
+
+		// resourceSecrets is the name of the secrets resource.
+		resourceSecrets = "secrets"
 	)
 
 	namespacePolicyRules := []struct {
@@ -178,24 +181,22 @@ func (c *checkCmd) createRoles(ctx context.Context, roleName string) error {
 		rules     []rbacv1.PolicyRule
 	}{
 		{constant.NamespaceAlphaSense, []rbacv1.PolicyRule{
-			{APIGroups: []string{constant.EmptyString}, Resources: []string{"secrets"}, Verbs: []string{rbacv1.VerbAll}},
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{resourceSecrets}, Verbs: []string{rbacv1.VerbAll}},
 		}},
 		{constant.NamespaceCrossplane, []rbacv1.PolicyRule{
-			{APIGroups: []string{constant.EmptyString}, Resources: []string{"pods"}, Verbs: []string{rbacv1.VerbAll}},
-			{APIGroups: []string{constant.EmptyString}, Resources: []string{"pods/log"}, Verbs: []string{rbacv1.VerbAll}},
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"pods"}, Verbs: []string{rbacv1.VerbAll}},
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"pods/log"}, Verbs: []string{rbacv1.VerbAll}},
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"serviceaccounts"}, Verbs: []string{rbacv1.VerbAll}},
 			{APIGroups: []string{constant.EmptyString}, Resources: []string{"serviceaccounts/token"}, Verbs: []string{rbacv1.VerbAll}},
 		}},
 		{constant.NamespaceMySQL, []rbacv1.PolicyRule{
-			{APIGroups: []string{constant.EmptyString}, Resources: []string{"secrets"}, Verbs: []string{rbacv1.VerbAll}}},
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{resourceSecrets}, Verbs: []string{rbacv1.VerbAll}}},
 		},
 		{constant.NamespacePostgres, []rbacv1.PolicyRule{
-			{APIGroups: []string{constant.EmptyString}, Resources: []string{"secrets"}, Verbs: []string{rbacv1.VerbAll}}},
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{resourceSecrets}, Verbs: []string{rbacv1.VerbAll}}},
 		},
 		{constant.NamespacePlatform, []rbacv1.PolicyRule{
-			{APIGroups: []string{constant.EmptyString}, Resources: []string{"secrets"}, Verbs: []string{rbacv1.VerbAll}}},
+			{APIGroups: []string{constant.EmptyString}, Resources: []string{resourceSecrets}, Verbs: []string{rbacv1.VerbAll}}},
 		},
 	}
 

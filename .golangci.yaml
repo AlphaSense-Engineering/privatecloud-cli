@@ -1,5 +1,6 @@
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
     - durationcheck
     - errcheck
@@ -11,10 +12,7 @@ linters:
     - gocognit
     - goconst
     - gocyclo
-    - gofmt
-    - goimports
     - gosec
-    - gosimple
     - govet
     - importas
     - ineffassign
@@ -29,21 +27,44 @@ linters:
     - prealloc
     - revive
     - staticcheck
-    - typecheck
     - unconvert
     - unused
     - whitespace
-    - wsl
-
-linters-settings:
-  gocognit:
-    min-complexity: 25
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  lll:
-    line-length: 160
-    tab-width: 4
-
-issues:
-  exclude-use-default: false
+    - wsl_v5
+  settings:
+    gocognit:
+      min-complexity: 25
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+    lll:
+      line-length: 160
+      tab-width: 4
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
+  exclusions:
+    generated: lax
+    rules:
+      - path: _test\.go
+        linters:
+          - goconst
+      - path: _test\.go
+        linters:
+          - gosec
+        text: G101
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

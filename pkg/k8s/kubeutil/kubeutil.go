@@ -60,7 +60,7 @@ func Config(path string) (config *rest.Config, pathToUse string, err error) {
 		pathToUse = filepath.Join(pathHome, pathHomeKubeDir, pathKubeDirConfig)
 	}
 
-	if _, err = os.Stat(pathToUse); os.IsNotExist(err) {
+	if _, err = os.Stat(pathToUse); os.IsNotExist(err) { // nolint:gosec
 		// pathToUseCluster is the path that we return when we are running in a cluster. This is not a real path,
 		// it's just a placeholder to indicate that we are running in a cluster.
 		const pathToUseCluster = "cluster"

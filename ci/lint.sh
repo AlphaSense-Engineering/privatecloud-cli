@@ -30,7 +30,7 @@ run "npx commitlint --from origin/main --to HEAD --verbose"
 run "go mod tidy"
 run "git diff --exit-code go.mod go.sum"
 
-run "golangci-lint run --out-format sarif --timeout 10m"
+run "golangci-lint run --output.sarif.path=stdout --timeout 10m"
 
 set +e
 markdownlint-cli2 **/*.md

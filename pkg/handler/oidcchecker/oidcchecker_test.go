@@ -160,11 +160,12 @@ func TestOIDCChecker_Handle(t *testing.T) {
 				},
 			}
 
-			if tc.cloud == cloud.AWS {
+			switch tc.cloud {
+			case cloud.AWS:
 				envCfg.Spec.CloudSpec.AWS = &envconfig.AWSSpec{
 					OIDCURL: tc.oidcURL,
 				}
-			} else if tc.cloud == cloud.Azure {
+			case cloud.Azure:
 				envCfg.Spec.CloudSpec.Azure = &envconfig.AzureSpec{
 					OIDCURL: tc.oidcURL,
 				}

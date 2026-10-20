@@ -180,13 +180,14 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 
 	var serviceAccountName string
 
-	if vcloud == cloud.AWS {
+	switch vcloud {
+	case cloud.AWS:
 		serviceAccountName = constant.ServiceAccountNameAWS
-	} else if vcloud == cloud.Azure {
+	case cloud.Azure:
 		serviceAccountName = constant.ServiceAccountNameAzure
-	} else if vcloud == cloud.GCP {
+	case cloud.GCP:
 		serviceAccountName = constant.ServiceAccountNameGCP
-	} else {
+	default:
 		c.logger.Fatal(pkgerrors.NewUnsupportedCloud(vcloud))
 	}
 
@@ -198,7 +199,7 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 	}
 
 	if vcloud == cloud.GCP {
-		sa.ObjectMeta.Annotations = map[string]string{
+		sa.Annotations = map[string]string{
 			gcpcloudutil.ServiceAccountAnnotationKey: gcpcloudutil.ServiceAccountAnnotation(envConfig.Spec.ClusterName, envConfig.Spec.CloudSpec.GCP.ProjectID),
 		}
 	}
@@ -248,9 +249,10 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 
 		if docs, exists := docMap[targetErr]; exists {
 			if errors.Is(err, cloudchecker.ErrFailedToCheckOIDCURL) {
-				if vcloud == cloud.AWS {
+				switch vcloud {
+				case cloud.AWS:
 					c.logRelatedDocumentation(docsAWSOIDC)
-				} else if vcloud == cloud.Azure {
+				case cloud.Azure:
 					c.logRelatedDocumentation(docsAzureCrossplaneMI)
 				}
 			} else {
@@ -272,11 +274,12 @@ func (c *podCmd) run(_ *cobra.Command, _ []string) {
 
 	var concreteCloudChecker handler.Handler
 
-	if vcloud == cloud.AWS {
+	switch vcloud {
+	case cloud.AWS:
 		concreteCloudChecker = awschecker.New(c.logger, envConfig, clientset, httpClient, jwksURI)
-	} else if vcloud == cloud.Azure {
+	case cloud.Azure:
 		concreteCloudChecker = azurechecker.New(c.logger, envConfig, clientset, httpClient, jwksURI)
-	} else if vcloud == cloud.GCP {
+	case cloud.GCP:
 		concreteCloudChecker = gcpchecker.New(c.logger, envConfig, clientset, googleCloudSDKDockerRepo, googleCloudSDKDockerImage)
 	}
 

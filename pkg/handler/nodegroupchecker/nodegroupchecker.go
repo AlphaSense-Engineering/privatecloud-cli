@@ -40,7 +40,6 @@ func (c *NodeGroupChecker) Handle(ctx context.Context, _ ...any) ([]any, error) 
 	)
 
 	nodes, err := c.clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-
 	if err != nil {
 		return nil, err
 	}

@@ -12,8 +12,8 @@ tasks:
   
   ci-lint:
     cmds:
-      - docker image inspect privatecloud-cli-ci-lint:0.0.1 > /dev/null 2>&1 || docker build --platform=linux/amd64 -t privatecloud-cli-ci-lint:0.0.1 -f ./ci/lint.dockerfile .
-      - docker run --platform linux/amd64 --rm -v $(pwd):/app privatecloud-cli-ci-lint:0.0.1
+      - docker image inspect privatecloud-cli-ci-lint:0.0.2 > /dev/null 2>&1 || docker build --platform=linux/amd64 -t privatecloud-cli-ci-lint:0.0.2 -f ./ci/lint.dockerfile .
+      - docker run --platform linux/amd64 --rm -v $(pwd):/app privatecloud-cli-ci-lint:0.0.2
   
   ci-test:
     cmds:

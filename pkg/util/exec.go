@@ -13,7 +13,7 @@ func Exec(l *log.Logger, outBuf *bytes.Buffer, bin string, args ...string) error
 	// logMsgRunningCommand is the message that is logged when running a command.
 	const logMsgRunningCommand = "running command: %s"
 
-	cmd := exec.Command(bin, args...)
+	cmd := exec.Command(bin, args...) // nolint:gosec
 
 	var writer io.Writer
 

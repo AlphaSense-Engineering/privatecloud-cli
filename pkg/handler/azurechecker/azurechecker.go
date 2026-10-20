@@ -96,7 +96,6 @@ func (c *AzureChecker) Handle(ctx context.Context, _ ...any) ([]any, error) {
 
 		return nil
 	}()
-
 	if err != nil {
 		return nil, multierr.Combine(crossplanerolechecker.ErrFailedToCheckCrossplaneRole, err)
 	}
